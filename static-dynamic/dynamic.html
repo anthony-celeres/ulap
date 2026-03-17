@@ -18,16 +18,16 @@
     }
 
     :root {
-      --bg: #111214;
-      --surface: #1a1c1f;
-      --card: #1f2124;
-      --border: #2a2d31;
-      --accent: #a78bfa;
-      --accent2: #60a5fa;
-      --text: #e8eaed;
-      --muted: #8b909a;
-      --rain-bar: #4c566a;
-      --card-today: linear-gradient(135deg, #1e2a4a 0%, #2d3a5e 100%);
+      --bg: #f8fafc;
+      --surface: #ffffff;
+      --card: #ffffff;
+      --border: #e2e8f0;
+      --accent: #7c3aed;
+      --accent2: #3b82f6;
+      --text: #0f172a;
+      --muted: #64748b;
+      --rain-bar: #cbd5e1;
+      --card-today: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
     }
 
     body {
@@ -222,7 +222,7 @@
 
     .today-card {
       background: var(--card-today);
-      border: 1px solid #2e3d6b;
+      border: 1px solid #e2e8f0;
       border-radius: 16px;
       padding: 18px;
       display: flex;
@@ -230,6 +230,7 @@
       gap: 5px;
       position: relative;
       min-height: 180px;
+      color: #fff;
     }
 
     .today-card .day-label {
@@ -239,7 +240,7 @@
 
     .today-card .time {
       font-size: 11px;
-      color: #9ca3b8;
+      color: rgba(255, 255, 255, 0.8);
     }
 
     .today-card .w-icon-big {
@@ -258,7 +259,7 @@
 
     .today-card .meta {
       font-size: 11px;
-      color: #9ca3b8;
+      color: rgba(255, 255, 255, 0.9);
       line-height: 1.9;
       margin-top: 2px;
     }
@@ -267,7 +268,7 @@
       display: flex;
       gap: 10px;
       font-size: 11px;
-      color: #9ca3b8;
+      color: rgba(255, 255, 255, 0.8);
       flex-wrap: wrap;
     }
 
@@ -391,7 +392,7 @@
     }
 
     .map-body {
-      background: #161920;
+      background: #f1f5f9;
       border-radius: 12px;
       height: 200px;
       position: relative;
@@ -408,6 +409,8 @@
       bottom: 14px;
       left: 14px;
       background: #fff;
+      border: 1px solid var(--border);
+      box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
       border-radius: 12px;
       padding: 12px;
       width: 165px;
@@ -422,7 +425,8 @@
     }
 
     .map-popup button {
-      background: #c4b5fd;
+      background: var(--accent);
+      color: #fff;
       border: none;
       border-radius: 8px;
       padding: 6px;
@@ -561,9 +565,9 @@
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      background: #14532d22;
-      border: 1px solid #22c55e55;
-      color: #86efac;
+      background: #dcfce7;
+      border: 1px solid #bbf7d0;
+      color: #166534;
       border-radius: 8px;
       padding: 4px 12px;
       font-size: 11px;
@@ -697,31 +701,16 @@
           <h3>Global map</h3>
           <div class="view-wide-btn">View wide ✨</div>
         </div>
-        <div class="map-body">
-          <svg viewBox="0 0 900 400" xmlns="http://www.w3.org/2000/svg"
-            style="position:absolute;top:0;left:0;width:100%;height:100%;opacity:0.3;">
-            <path
-              d="M50,80 Q90,60 140,70 Q180,65 200,90 Q220,120 210,160 Q190,200 160,220 Q130,240 100,230 Q70,200 60,160 Q45,120 50,80Z"
-              fill="#4a5568" />
-            <path
-              d="M120,250 Q160,240 180,260 Q200,290 190,340 Q175,370 150,375 Q120,370 110,340 Q95,300 100,270 Q108,255 120,250Z"
-              fill="#4a5568" />
-            <path d="M360,50 Q400,40 430,55 Q450,70 445,100 Q430,120 400,125 Q370,120 355,100 Q348,75 360,50Z"
-              fill="#4a5568" />
-            <path
-              d="M360,130 Q400,120 430,140 Q455,170 450,230 Q440,280 410,310 Q380,325 355,305 Q330,270 330,220 Q330,165 345,145 Q352,133 360,130Z"
-              fill="#4a5568" />
-            <path
-              d="M450,40 Q530,30 620,45 Q700,55 740,80 Q760,110 745,150 Q720,185 680,195 Q630,200 580,185 Q530,165 500,140 Q465,110 455,80 Q448,58 450,40Z"
-              fill="#4a5568" />
-            <path
-              d="M620,250 Q670,240 710,255 Q740,275 738,315 Q725,345 695,355 Q660,358 635,338 Q610,310 612,278 Q614,258 620,250Z"
-              fill="#4a5568" />
-          </svg>
-          <div class="map-pin" style="top:30%;left:22%;">📍</div>
-          <div class="map-pin" style="top:22%;left:44%;">📍</div>
-          <div class="map-pin" style="top:28%;left:60%;">📍</div>
-          <div class="map-pin" style="top:60%;left:72%;">📍</div>
+        <div class="map-body" id="map-container">
+          <iframe
+            id="gmap-iframe"
+            width="100%"
+            height="100%"
+            frameborder="0"
+            style="border:0; border-radius: 12px;"
+            src="https://maps.google.com/maps?q=Seattle&t=&z=13&ie=UTF8&iwloc=&output=embed"
+            allowfullscreen>
+          </iframe>
           <div class="map-popup">
             <p>Explore global map of wind, weather and oceans condition.</p>
             <button>Get started</button>
@@ -844,6 +833,10 @@
          <span>🌇 Sunset: ${fmtSunTime(data.sys.sunset, offset)}</span>`;
       document.getElementById('current-city-label').textContent = `${data.name}, ${data.sys.country}`;
       document.getElementById('map-city-label').textContent = `${data.name}, ${data.sys.country}`;
+      
+      // Update Google Map
+      const mapSrc = `https://maps.google.com/maps?q=${encodeURIComponent(data.name)}&t=&z=13&ie=UTF8&iwloc=&output=embed`;
+      document.getElementById('gmap-iframe').src = mapSrc;
     }
 
     // ── Render 6-day forecast ──
