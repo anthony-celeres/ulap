@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Weather Dashboard — Static</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap"
+    rel="stylesheet" />
+  <style>
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg: #111214;
+      --surface: #1a1c1f;
+      --card: #1f2124;
+      --border: #2a2d31;
+      --accent: #a78bfa;
+      --accent2: #60a5fa;
+      --text: #e8eaed;
+      --muted: #8b909a;
+      --bar: #2d3748;
+      --bar-fill: #4a5568;
+      --highlight: #252830;
+      --rain-bar: #4c566a;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    /* ── TOP BAR ── */
+    .topbar {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .topbar-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .icon-btn {
+      width: 38px;
+      height: 38px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: var(--muted);
+      font-size: 16px;
+    }
+
+    .location-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 7px 14px;
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    .location-badge span {
+      color: var(--muted);
+      margin-right: 2px;
+    }
+
+    .search-bar {
+      flex: 1;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 8px 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-left: auto;
+    }
+
+    .avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #f59e0b, #ef4444);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    /* ── TABS ── */
+    .tabs {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 20px;
+    }
+
+    .tab {
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--muted);
+      cursor: pointer;
+    }
+
+    .tab.active {
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    .tab-btns {
+      margin-left: auto;
+      display: flex;
+      gap: 4px;
+    }
+
+    .tab-btn {
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+
+    .tab-btn.active {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .tab-btn:not(.active) {
+      background: var(--surface);
+      color: var(--muted);
+      border: 1px solid var(--border);
+    }
+
+    /* ── MAIN GRID ── */
+    .main-grid {
+      display: grid;
+      grid-template-columns: 1fr 220px;
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+
+    /* ── FORECAST STRIP ── */
+    .forecast-strip {
+      display: grid;
+      grid-template-columns: 220px repeat(6, 1fr);
+      gap: 10px;
+    }
+
+    .today-card {
+      background: linear-gradient(135deg, #1e2a4a 0%, #2d3a5e 100%);
+      border: 1px solid #2e3d6b;
+      border-radius: 16px;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .today-card .day-label {
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .today-card .time {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .today-card .temp-big {
+      font-size: 44px;
+      font-weight: 700;
+      line-height: 1;
+      margin: 8px 0 4px;
+    }
+
+    .today-card .weather-icon {
+      font-size: 36px;
+      position: absolute;
+      right: 16px;
+      top: 32px;
+    }
+
+    .today-card {
+      position: relative;
+    }
+
+    .today-card .meta {
+      font-size: 11px;
+      color: #9ca3b8;
+      line-height: 1.8;
+      margin-top: 4px;
+    }
+
+    .today-card .sunrise-row {
+      display: flex;
+      gap: 12px;
+      font-size: 11px;
+      color: #9ca3b8;
+    }
+
+    .day-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .day-card .day-name {
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 500;
+    }
+
+    .day-card .w-icon {
+      font-size: 30px;
+    }
+
+    .day-card .temp {
+      font-size: 22px;
+      font-weight: 700;
+    }
+
+    /* ── RAIN CHART ── */
+    .rain-section {}
+
+    .section-title {
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 14px;
+    }
+
+    .rain-chart {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      height: 160px;
+      position: relative;
+    }
+
+    .rain-labels-y {
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 22px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .rain-bars-wrap {
+      margin-left: 50px;
+      display: flex;
+      align-items: flex-end;
+      gap: 8px;
+      height: 138px;
+    }
+
+    .rain-bar-col {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .rain-bar {
+      width: 22px;
+      border-radius: 4px 4px 0 0;
+      background: var(--rain-bar);
+      transition: height .3s;
+    }
+
+    .rain-bar.active {
+      background: var(--accent2);
+    }
+
+    .rain-time {
+      font-size: 10px;
+      color: var(--muted);
+    }
+
+    .rain-dashed {
+      position: absolute;
+      left: 50px;
+      right: 0;
+      border-top: 1px dashed var(--border);
+    }
+
+    /* ── BOTTOM GRID ── */
+    .bottom-grid {
+      display: grid;
+      grid-template-columns: 1fr 260px;
+      gap: 20px;
+    }
+
+    /* ── MAP SECTION ── */
+    .map-section {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 18px;
+      min-height: 260px;
+    }
+
+    .map-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    .map-header h3 {
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .view-wide-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 5px 12px;
+      font-size: 12px;
+      color: var(--muted);
+      cursor: pointer;
+    }
+
+    .map-body {
+      background: #161920;
+      border-radius: 12px;
+      height: 200px;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* SVG world map silhouette approximation via CSS */
+    .map-svg {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      opacity: 0.5;
+    }
+
+    .map-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--accent);
+      position: absolute;
+      box-shadow: 0 0 8px var(--accent);
+    }
+
+    .map-popup {
+      position: absolute;
+      bottom: 16px;
+      left: 16px;
+      background: #fff;
+      border-radius: 12px;
+      padding: 12px 14px;
+      width: 170px;
+      color: #111;
+    }
+
+    .map-popup p {
+      font-size: 11px;
+      font-weight: 500;
+      line-height: 1.5;
+      margin-bottom: 10px;
+    }
+
+    .map-popup button {
+      background: #c4b5fd;
+      border: none;
+      border-radius: 8px;
+      padding: 6px 14px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      width: 100%;
+    }
+
+    .map-pin {
+      position: absolute;
+      font-size: 18px;
+    }
+
+    /* ── CITIES SECTION ── */
+    .cities-section {}
+
+    .cities-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+
+    .cities-header h3 {
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .show-all {
+      font-size: 12px;
+      color: var(--accent);
+      cursor: pointer;
+    }
+
+    .city-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 13px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+
+    .city-card:last-child {
+      margin-bottom: 0;
+    }
+
+    .city-info {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .city-country {
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .city-name {
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    .city-cond {
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .city-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .city-icon {
+      font-size: 28px;
+    }
+
+    .city-temp {
+      font-size: 22px;
+      font-weight: 700;
+    }
+
+    /* ── STATIC BADGE ── */
+    .static-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #7f1d1d22;
+      border: 1px solid #ef444455;
+      color: #fca5a5;
+      border-radius: 8px;
+      padding: 4px 12px;
+      font-size: 11px;
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+
+    .static-badge::before {
+      content: "●";
+      color: #ef4444;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="static-badge">STATIC VERSION — Hardcoded Data</div>
+
+  <!-- TOP BAR -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="icon-btn">⋮⋮</div>
+      <div class="icon-btn">🌤</div>
+      <div class="location-badge"><span>📍</span> Seattle, Australia</div>
+    </div>
+    <div class="search-bar">🔍 &nbsp;Search city...</div>
+    <div class="topbar-right">
+      <div class="icon-btn">⚙️</div>
+      <div class="icon-btn">🌙</div>
+      <div class="avatar">A</div>
+    </div>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <div class="tab">Today</div>
+    <div class="tab">Tomorrow</div>
+    <div class="tab active">Next 7 days</div>
+    <div class="tab-btns">
+      <div class="tab-btn active">Forecast</div>
+      <div class="tab-btn">Air quality</div>
+    </div>
+  </div>
+
+  <!-- MAIN GRID -->
+  <div class="main-grid">
+    <!-- Forecast Strip -->
+    <div class="forecast-strip">
+      <!-- Today Card -->
+      <div class="today-card">
+        <div class="day-label">Monday</div>
+        <div class="time">11:42 PM</div>
+        <div class="weather-icon">🌤️</div>
+        <div class="temp-big">16°</div>
+        <div class="meta">
+          Real Feel 18°<br>
+          Wind: N.E. 5-8 km/h<br>
+          Pressure: 1006MB<br>
+          Humidity: 51%
+        </div>
+        <div class="sunrise-row">
+          <span>🌅 Sunrise: 6:02 AM</span>
+          <span>🌇 Sunset: 9:19 PM</span>
+        </div>
+      </div>
+
+      <!-- Tue -->
+      <div class="day-card">
+        <div class="day-name">Tue</div>
+        <div class="w-icon">⛅</div>
+        <div class="temp">10°</div>
+      </div>
+      <!-- Wed -->
+      <div class="day-card">
+        <div class="day-name">Wed</div>
+        <div class="w-icon">🌤️</div>
+        <div class="temp">15°</div>
+      </div>
+      <!-- Thu -->
+      <div class="day-card">
+        <div class="day-name">Thu</div>
+        <div class="w-icon">🌥️</div>
+        <div class="temp">11°</div>
+      </div>
+      <!-- Fri -->
+      <div class="day-card">
+        <div class="day-name">Fri</div>
+        <div class="w-icon">🌤️</div>
+        <div class="temp">18°</div>
+      </div>
+      <!-- Sat -->
+      <div class="day-card">
+        <div class="day-name">Sat</div>
+        <div class="w-icon">🌦️</div>
+        <div class="temp">12°</div>
+      </div>
+      <!-- Sun -->
+      <div class="day-card">
+        <div class="day-name">Sun</div>
+        <div class="w-icon">🌧️</div>
+        <div class="temp">10°</div>
+      </div>
+    </div>
+
+    <!-- Rain Chart -->
+    <div class="rain-section">
+      <div class="section-title">Chance of rain</div>
+      <div class="rain-chart">
+        <div class="rain-labels-y">
+          <span>Rainy</span>
+          <span>Sunny</span>
+          <span>Heavy</span>
+        </div>
+        <div style="position:absolute; top:25%; left:50px; right:0; border-top:1px dashed var(--border);"></div>
+        <div style="position:absolute; top:55%; left:50px; right:0; border-top:1px dashed var(--border);"></div>
+        <div class="rain-bars-wrap">
+          <div class="rain-bar-col">
+            <div class="rain-bar" style="height:55px;"></div>
+            <span class="rain-time">10AM</span>
+          </div>
+          <div class="rain-bar-col">
+            <div class="rain-bar active" style="height:75px;"></div>
+            <span class="rain-time">11AM</span>
+          </div>
+          <div class="rain-bar-col">
+            <div class="rain-bar active" style="height:100px;"></div>
+            <span class="rain-time">12AM</span>
+          </div>
+          <div class="rain-bar-col">
+            <div class="rain-bar active" style="height:110px;"></div>
+            <span class="rain-time">01PM</span>
+          </div>
+          <div class="rain-bar-col">
+            <div class="rain-bar active" style="height:95px;"></div>
+            <span class="rain-time">02PM</span>
+          </div>
+          <div class="rain-bar-col">
+            <div class="rain-bar active" style="height:120px;"></div>
+            <span class="rain-time">03PM</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOTTOM GRID -->
+  <div class="bottom-grid">
+    <!-- Map Section -->
+    <div class="map-section">
+      <div class="map-header">
+        <h3>Global map</h3>
+        <div class="view-wide-btn">View wide ✨</div>
+      </div>
+      <div class="map-body">
+        <!-- World map approximated with SVG paths -->
+        <svg viewBox="0 0 900 400" xmlns="http://www.w3.org/2000/svg"
+          style="position:absolute;top:0;left:0;width:100%;height:100%;opacity:0.3;">
+          <!-- North America -->
+          <path
+            d="M50,80 Q90,60 140,70 Q180,65 200,90 Q220,120 210,160 Q190,200 160,220 Q130,240 100,230 Q70,200 60,160 Q45,120 50,80Z"
+            fill="#4a5568" />
+          <!-- South America -->
+          <path
+            d="M120,250 Q160,240 180,260 Q200,290 190,340 Q175,370 150,375 Q120,370 110,340 Q95,300 100,270 Q108,255 120,250Z"
+            fill="#4a5568" />
+          <!-- Europe -->
+          <path d="M360,50 Q400,40 430,55 Q450,70 445,100 Q430,120 400,125 Q370,120 355,100 Q348,75 360,50Z"
+            fill="#4a5568" />
+          <!-- Africa -->
+          <path
+            d="M360,130 Q400,120 430,140 Q455,170 450,230 Q440,280 410,310 Q380,325 355,305 Q330,270 330,220 Q330,165 345,145 Q352,133 360,130Z"
+            fill="#4a5568" />
+          <!-- Asia -->
+          <path
+            d="M450,40 Q530,30 620,45 Q700,55 740,80 Q760,110 745,150 Q720,185 680,195 Q630,200 580,185 Q530,165 500,140 Q465,110 455,80 Q448,58 450,40Z"
+            fill="#4a5568" />
+          <!-- Australia -->
+          <path
+            d="M620,250 Q670,240 710,255 Q740,275 738,315 Q725,345 695,355 Q660,358 635,338 Q610,310 612,278 Q614,258 620,250Z"
+            fill="#4a5568" />
+        </svg>
+
+        <!-- Map pins -->
+        <div class="map-pin" style="top:30%;left:22%;">📍</div>
+        <div class="map-pin" style="top:22%;left:44%;">📍</div>
+        <div class="map-pin" style="top:28%;left:60%;">📍</div>
+        <div class="map-pin" style="top:60%;left:72%;">📍</div>
+        <div class="map-pin" style="top:45%;left:35%;">⛅</div>
+
+        <!-- Popup card -->
+        <div class="map-popup">
+          <p>Explore global map of wind, weather and oceans condition.</p>
+          <button>Get started</button>
+        </div>
+
+        <!-- Seattle pin -->
+        <div
+          style="position:absolute;bottom:18px;right:60px;font-size:11px;color:#c4b5fd;display:flex;align-items:center;gap:4px;">
+          📍 <span>Seattle, AU</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Cities Section -->
+    <div class="cities-section">
+      <div class="cities-header">
+        <h3>Other large cities</h3>
+        <span class="show-all">Show All ›</span>
+      </div>
+
+      <div class="city-card">
+        <div class="city-info">
+          <span class="city-country">US</span>
+          <span class="city-name">California</span>
+          <span class="city-cond">Mostly Sunny</span>
+        </div>
+        <div class="city-right">
+          <div class="city-icon">🌤️</div>
+          <div class="city-temp">29°</div>
+        </div>
+      </div>
+
+      <div class="city-card">
+        <div class="city-info">
+          <span class="city-country">China</span>
+          <span class="city-name">Beijing</span>
+          <span class="city-cond">Cloudy</span>
+        </div>
+        <div class="city-right">
+          <div class="city-icon">☁️</div>
+          <div class="city-temp">19°</div>
+        </div>
+      </div>
+
+      <div class="city-card">
+        <div class="city-info">
+          <span class="city-country">Israel</span>
+          <span class="city-name">Jerusalem</span>
+          <span class="city-cond">Sunny</span>
+        </div>
+        <div class="city-right">
+          <div class="city-icon">⛅</div>
+          <div class="city-temp">31°</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</body>
+
+</html>
