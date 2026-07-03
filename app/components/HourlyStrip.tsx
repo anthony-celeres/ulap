@@ -27,7 +27,8 @@ function HourTile({ point, now, past }: { point: HourlyPoint; now: boolean; past
       </div>
       <WeatherIcon code={point.code} size={26} />
       <div className="text-base font-bold text-ink leading-none">{Math.round(point.temp)}°</div>
-      <div className="flex items-center gap-1 text-xs font-medium text-accent2">
+      {/* Rain chance only when meaningful; invisible keeps tiles aligned. */}
+      <div className={`flex items-center gap-1 text-xs font-medium text-accent2 ${point.pop < 10 ? "invisible" : ""}`}>
         <Droplets size={10} aria-hidden="true" />
         {Math.round(point.pop)}%
       </div>
