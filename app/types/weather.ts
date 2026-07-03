@@ -15,36 +15,47 @@ export interface CurrentWeather {
   sys: { country: string; sunrise: number; sunset: number };
 }
 
-/** One 3-hour slot from the OpenWeatherMap "5 Day / 3 Hour Forecast" response. */
-export interface ForecastSlot {
-  dt: number;
-  main: {
-    temp: number;
-    temp_min: number;
-    temp_max: number;
+/**
+ * Subset of the Open-Meteo forecast response (hourly + daily arrays).
+ * With `timezone=auto`, all times are local ISO strings.
+ */
+export interface OpenMeteoForecast {
+  hourly: {
+    time: string[];
+    temperature_2m: number[];
+    precipitation_probability: (number | null)[];
+    weather_code: number[];
   };
-  weather: { id: number; main: string; description: string }[];
-  /** Probability of precipitation, 0–1. */
+  daily: {
+    time: string[];
+    weather_code: number[];
+    temperature_2m_max: number[];
+    temperature_2m_min: number[];
+  };
+}
+
+/** One display hour. */
+export interface HourlyPoint {
+  /** City-local time encoded as a UTC epoch (format with offset 0). */
+  dt: number;
+  temp: number;
+  /** OpenWeatherMap-style condition id (WMO codes are mapped over). */
+  code: number;
+  /** Probability of precipitation, 0–100. */
   pop: number;
 }
 
-export interface ForecastResponse {
-  list: ForecastSlot[];
-  city: { timezone: number };
-}
-
-/** A day aggregated from its 3-hour slots. */
+/** One forecast day. */
 export interface DailyForecast {
   /** Local date key, YYYY-MM-DD. */
   key: string;
-  /** Timestamp of the representative (closest-to-midday) slot. */
+  /** Local noon encoded as a UTC epoch (format with offset 0). */
   dt: number;
-  /** OpenWeatherMap condition id of the representative slot. */
+  /** OpenWeatherMap-style condition id (WMO codes are mapped over). */
   code: number;
   condition: string;
   min: number;
   max: number;
-  slots: ForecastSlot[];
 }
 
 export interface CitySummary {
@@ -55,16 +66,6 @@ export interface CitySummary {
   /** OpenWeatherMap condition id. */
   code: number;
   temp: number;
-}
-
-/** One display hour, interpolated from the 3-hourly forecast slots. */
-export interface HourlyPoint {
-  dt: number;
-  temp: number;
-  /** OpenWeatherMap condition id of the nearest real slot. */
-  code: number;
-  /** Probability of precipitation of the nearest real slot, 0–1. */
-  pop: number;
 }
 
 /** One result from the OpenWeatherMap Geocoding API (/geo/1.0/direct). */
