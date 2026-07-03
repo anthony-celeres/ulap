@@ -7,7 +7,7 @@ Built with **Next.js (App Router) · React · TypeScript · Tailwind CSS v4**.
 ## Features
 
 - **Live current conditions** — temperature, real feel, wind, pressure, humidity, sunrise/sunset, all shown in the searched city's local time.
-- **Hourly today + 6-day forecast** — a Google Weather-style toggle: *Today* shows the next 24 hours in 3-hour steps (temperature and rain chance per slot); *Next 6 days* shows daily cards with real aggregated high/low temperatures and a representative midday icon.
+- **Hourly today + 6-day forecast** — a Google Weather-style toggle: *Today* shows all 24 upcoming hours (temperatures interpolated between the API's 3-hour slots; condition and rain chance from the nearest real slot); *Next 6 days* shows every forecast day as a card with real aggregated high/low temperatures. Both strips scroll horizontally with neumorphic arrow buttons (and swipe/trackpad), so nothing is cut off at any screen size.
 - **Hourly rain chart** — real probability-of-precipitation data. In the 6-day view, click any day card to see that day's hourly rain chances.
 - **Air quality** — toggle the chart panel to see the Air Quality Index (1–5) and PM2.5 / PM10 / O₃ / NO₂ concentrations.
 - **City search with autocomplete + geolocation** — type a few letters and pick from live, Philippines-only location suggestions with their province (OpenWeatherMap Geocoding API, with keyboard navigation); weather then loads by exact coordinates. Or use the locate button for where you are.
