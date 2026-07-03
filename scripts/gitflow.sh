@@ -40,6 +40,13 @@ case "$cmd" in
       feature/*) ;;
       *) echo "ship: run this from a feature/* branch." >&2; exit 1 ;;
     esac
+    # One-or-two-commit features make noisy merge history; let work accumulate.
+    count="$(git rev-list --count "$DEVELOP"..HEAD)"
+    if [ "$count" -lt 3 ] && [ "${1:-}" != "--force" ]; then
+      echo "ship: only $count commit(s) on $branch — keep working and ship at 3+," >&2
+      echo "      or re-run with --force if this change is genuinely complete." >&2
+      exit 1
+    fi
     git push -u origin "$branch"
     gh pr create --base "$DEVELOP" --head "$branch" --fill
     gh pr merge "$branch" --merge
