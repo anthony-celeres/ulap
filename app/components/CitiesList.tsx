@@ -1,36 +1,39 @@
 "use client";
 
-interface CityData {
-  name: string;
-  country: string;
-  condition: string;
-  icon: string;
-  temp: number;
+import type { CitySummary } from "../types/weather";
+import WeatherIcon from "./WeatherIcon";
+
+interface CitiesListProps {
+  cities: CitySummary[];
+  onSelect: (city: string) => void;
 }
 
-export default function CitiesList({ cities }: { cities: CityData[] }) {
+export default function CitiesList({ cities, onSelect }: CitiesListProps) {
   return (
-    <div className="cities-section">
-      <div className="flex items-center justify-between mb-3.5 cities-header">
-        <h3 className="text-sm font-semibold">Other large cities</h3>
-        <span className="text-xs text-[#7c3aed] cursor-pointer show-all">Show All ›</span>
-      </div>
+    <section aria-label="Around the Philippines" className="h-full flex flex-col">
+      <h3 className="text-sm font-semibold text-ink mb-4">Around the Philippines</h3>
 
-      <div className="flex flex-col gap-2">
-        {cities.map((city, idx) => (
-          <div key={idx} className="flex items-center justify-between p-3 px-4 bg-white border border-[#e2e8f0] rounded-xl city-card">
-            <div className="flex flex-col gap-0.5 city-info">
-              <span className="text-[11px] text-[#64748b] city-country">{city.country}</span>
-              <span className="text-sm font-semibold city-name">{city.name}</span>
-              <span className="text-[11px] text-[#64748b] city-cond">{city.condition}</span>
+      <div className="flex-1 grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-1 gap-4">
+        {cities.map((city) => (
+          <button
+            key={city.name}
+            type="button"
+            onClick={() => onSelect(city.name)}
+            title={`Show weather for ${city.name}`}
+            className="flex items-center justify-between py-3 px-5 rounded-3xl neu-sm active:neu-inset-sm cursor-pointer text-left transition-shadow duration-150"
+          >
+            <div className="flex flex-col gap-0.5">
+              <span className="text-[10px] uppercase tracking-wide text-muted">{city.country}</span>
+              <span className="text-sm font-semibold text-ink">{city.name}</span>
+              <span className="text-[11px] text-muted">{city.condition}</span>
             </div>
-            <div className="flex items-center gap-2 city-right">
-              <div className="text-[26px] city-icon">{city.icon}</div>
-              <div className="text-xl font-bold city-temp">{city.temp}°</div>
+            <div className="flex items-center gap-3">
+              <WeatherIcon code={city.code} size={30} />
+              <div className="text-xl font-bold text-ink">{city.temp}°</div>
             </div>
-          </div>
+          </button>
         ))}
       </div>
-    </div>
+    </section>
   );
 }
