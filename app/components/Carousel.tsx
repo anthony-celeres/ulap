@@ -6,6 +6,8 @@ import { type ReactNode, useCallback, useEffect, useRef, useState } from "react"
 interface CarouselProps {
   children: ReactNode;
   ariaLabel: string;
+  /** Child index to bring into view on mount (e.g. the current hour). */
+  scrollToIndex?: number;
 }
 
 const arrowClass =
@@ -17,7 +19,7 @@ const arrowClass =
  * padding (offset by negative margin) keeps the tiles' soft shadows from
  * being clipped by the scroll container.
  */
-export default function Carousel({ children, ariaLabel }: CarouselProps) {
+export default function Carousel({ children, ariaLabel, scrollToIndex }: CarouselProps) {
   const trackRef = useRef<HTMLDivElement>(null);
   const [canLeft, setCanLeft] = useState(false);
   const [canRight, setCanRight] = useState(false);
@@ -41,6 +43,18 @@ export default function Carousel({ children, ariaLabel }: CarouselProps) {
       window.removeEventListener("resize", update);
     };
   }, [update, children]);
+
+  useEffect(() => {
+    if (scrollToIndex === undefined) return;
+    const raf = requestAnimationFrame(() => {
+      const el = trackRef.current;
+      const child = el?.children[scrollToIndex] as HTMLElement | undefined;
+      if (el && child) {
+        el.scrollLeft = Math.max(0, child.offsetLeft - el.offsetLeft - 16);
+      }
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [scrollToIndex]);
 
   const scroll = (dir: 1 | -1) => {
     const el = trackRef.current;

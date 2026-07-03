@@ -20,7 +20,7 @@ import type {
   HourlyPoint,
   WeatherPayload,
 } from "./types/weather";
-import { fmtHour, fmtTime, getDayName, getShortDay, msToKmh } from "./utils/weather";
+import { findSevereHour, fmtHour, fmtTime, getDayName, getShortDay, msToKmh } from "./utils/weather";
 
 const DEFAULT_CITY = "Manila";
 const LAST_CITY_KEY = "ulap-last-city";
@@ -158,15 +158,24 @@ export default function Home() {
   }
 
   const tz = current?.timezone ?? 0;
+  const nowLocal = current ? current.dt + tz : 0;
   const selected = days[selectedDay];
   // Open-Meteo hours are calendar-aligned: 24 entries per local day.
   const todayHours = hourlyAll.slice(0, 24);
-  const rainData = hourlyAll
-    .slice(selectedDay * 24, selectedDay * 24 + 24)
-    .filter((_, i) => i % 3 === 0)
-    .map((h) => ({ label: fmtHour(h.dt, 0), pop: Math.round(h.pop) }));
+  const chartHours = hourlyAll.slice(selectedDay * 24, selectedDay * 24 + 24).filter((_, i) => i % 3 === 0);
+  const rainData = chartHours.map((h) => ({ label: fmtHour(h.dt, 0), pop: Math.round(h.pop) }));
+  const chartTemps = chartHours.map((h) => h.temp);
   const selectedDayName =
     selectedDay === 0 ? "Today" : selectedDay === 1 ? "Tomorrow" : selected ? getDayName(selected.dt, 0) : "";
+
+  // Current-hour UV and any severe weather in the next 24 hours.
+  const currentUv = hourlyAll.find((h) => nowLocal >= h.dt && nowLocal < h.dt + 3600)?.uv;
+  const severe = current ? findSevereHour(hourlyAll.slice(0, 48), nowLocal) : null;
+  const severeLabel = severe
+    ? `${severe.code >= 200 && severe.code < 300 ? "Thunderstorm" : "Heavy rain"} expected around ${fmtHour(severe.dt, 0)} ${
+        severe.dt < (todayHours[23]?.dt ?? 0) + 3600 ? "today" : "tomorrow"
+      }`
+    : "";
 
   const dayTabClass = (active: boolean) =>
     `px-4 py-1.5 rounded-full text-sm cursor-pointer transition-shadow duration-150 ${
@@ -227,6 +236,15 @@ export default function Home() {
         </div>
       ) : (
         <>
+          {severe && (
+            <div
+              role="status"
+              className="flex items-center gap-2.5 mb-6 px-5 py-3 rounded-2xl border border-edge neu-sm text-sm font-medium text-amber-600 dark:text-amber-400"
+            >
+              <TriangleAlert size={16} aria-hidden="true" />
+              {severeLabel}
+            </div>
+          )}
           <div className="flex flex-wrap items-center gap-3 mb-6">
             <div className="flex gap-1 p-1.5 rounded-full neu-inset-sm" role="group" aria-label="Forecast view">
               <button
@@ -277,6 +295,7 @@ export default function Home() {
                 windKmh={msToKmh(current.wind.speed)}
                 pressure={current.main.pressure}
                 humidity={current.main.humidity}
+                uv={currentUv}
                 sunrise={fmtTime(current.sys.sunrise, tz)}
                 sunset={fmtTime(current.sys.sunset, tz)}
               />
@@ -308,7 +327,7 @@ export default function Home() {
 
             <div className="lg:col-span-4 xl:col-span-3">
               {panel === "rain" ? (
-                <RainChart dayName={selectedDayName} data={rainData} />
+                <RainChart dayName={selectedDayName} data={rainData} temps={chartTemps} />
               ) : (
                 <AirQualityCard air={air} dayName="now" />
               )}
