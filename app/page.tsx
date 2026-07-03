@@ -18,12 +18,14 @@ import type {
   ForecastResponse,
   GeoSuggestion,
 } from "./types/weather";
+import Carousel from "./components/Carousel";
 import {
   fmtHour,
   fmtTime,
   getDayName,
   getShortDay,
   groupForecastByDay,
+  interpolateHourly,
   msToKmh,
 } from "./utils/weather";
 
@@ -170,10 +172,12 @@ export default function Home() {
 
   const tz = current?.timezone ?? 0;
   const selected = days[selectedDay];
-  // Roll today into tomorrow's slots so hourly views always cover ~24h
-  // (late in the evening only one or two of today's 3-hour slots remain).
-  const next24 = [...(days[0]?.slots ?? []), ...(days[1]?.slots ?? [])].slice(0, 8);
-  const rainSlots = selectedDay === 0 ? next24 : (selected?.slots ?? []).slice(0, 8);
+  // Roll today into the following days' slots so hourly views always cover
+  // 24h (late in the evening only one or two of today's slots remain).
+  // 9 slots = 8 three-hour intervals = 24 interpolated hours.
+  const upcoming = [...(days[0]?.slots ?? []), ...(days[1]?.slots ?? []), ...(days[2]?.slots ?? [])];
+  const hourly = interpolateHourly(upcoming.slice(0, 9));
+  const rainSlots = selectedDay === 0 ? upcoming.slice(0, 8) : (selected?.slots ?? []).slice(0, 8);
   const rainData = rainSlots.map((s) => ({
     label: fmtHour(s.dt, tz),
     pop: Math.round(s.pop * 100),
@@ -286,23 +290,23 @@ export default function Home() {
 
             <div className="lg:col-span-8 xl:col-span-6">
               {view === "today" ? (
-                <HourlyStrip slots={next24} tz={tz} />
+                <HourlyStrip hours={hourly} tz={tz} />
               ) : (
-                // auto-fit collapses unused tracks, so fewer-than-6 days still fills the row
-                <div className="grid grid-cols-[repeat(auto-fit,minmax(110px,1fr))] gap-4 xl:gap-5 h-full">
-                  {days.slice(0, 6).map((d, i) => (
-                    <ForecastCard
-                      key={d.key}
-                      dayName={i === 0 ? "Today" : getShortDay(d.dt, tz)}
-                      code={d.code}
-                      condition={d.condition}
-                      min={d.min}
-                      max={d.max}
-                      selected={selectedDay === i}
-                      onSelect={() => setSelectedDay(i)}
-                    />
+                <Carousel ariaLabel="Daily forecast">
+                  {days.map((d, i) => (
+                    <div key={d.key} role="listitem" className="w-[136px] shrink-0 snap-start">
+                      <ForecastCard
+                        dayName={i === 0 ? "Today" : getShortDay(d.dt, tz)}
+                        code={d.code}
+                        condition={d.condition}
+                        min={d.min}
+                        max={d.max}
+                        selected={selectedDay === i}
+                        onSelect={() => setSelectedDay(i)}
+                      />
+                    </div>
                   ))}
-                </div>
+                </Carousel>
               )}
             </div>
 

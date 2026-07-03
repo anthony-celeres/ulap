@@ -1,4 +1,4 @@
-import type { DailyForecast, ForecastSlot } from "../types/weather";
+import type { DailyForecast, ForecastSlot, HourlyPoint } from "../types/weather";
 
 export const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 export const SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -41,6 +41,30 @@ export const AQI_LEVELS = ["Good", "Fair", "Moderate", "Poor", "Very Poor"] as c
 
 export function describeAqi(aqi: number) {
   return AQI_LEVELS[aqi - 1] ?? "Unknown";
+}
+
+/**
+ * Expand 3-hourly forecast slots into per-hour points: temperature is
+ * linearly interpolated between slots; condition and rain probability are
+ * held from the nearest real slot (they are not meaningfully divisible).
+ */
+export function interpolateHourly(slots: ForecastSlot[], hours = 24): HourlyPoint[] {
+  const points: HourlyPoint[] = [];
+  for (let i = 0; i < slots.length - 1 && points.length < hours; i++) {
+    const a = slots[i];
+    const b = slots[i + 1];
+    const stepC = (b.main.temp - a.main.temp) / 3;
+    for (let h = 0; h < 3 && points.length < hours; h++) {
+      const nearest = h < 2 ? a : b;
+      points.push({
+        dt: a.dt + h * 3600,
+        temp: a.main.temp + stepC * h,
+        code: nearest.weather[0].id,
+        pop: nearest.pop,
+      });
+    }
+  }
+  return points;
 }
 
 /**
