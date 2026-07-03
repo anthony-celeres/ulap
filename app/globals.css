@@ -12,8 +12,8 @@
   --bg: #e3e9f2;
   --surface: #e3e9f2;
   --well: #d6deea;
-  --shadow-dark: rgba(163, 177, 198, 0.72);
-  --shadow-light: rgba(255, 255, 255, 0.95);
+  --shadow-dark: rgba(163, 177, 198, 0.5);
+  --shadow-light: rgba(255, 255, 255, 0.8);
   --text: #2b3442;
   --muted: #5f6b7c;
   --accent: #2f7cf6;
@@ -28,8 +28,8 @@
   --bg: #242832;
   --surface: #242832;
   --well: #1e222b;
-  --shadow-dark: rgba(9, 11, 16, 0.65);
-  --shadow-light: rgba(62, 70, 88, 0.48);
+  --shadow-dark: rgba(9, 11, 16, 0.45);
+  --shadow-light: rgba(62, 70, 88, 0.32);
   --text: #e8edf5;
   --muted: #98a4b8;
   --accent: #5b9dff;
@@ -51,28 +51,28 @@
   --color-edge: var(--edge);
 }
 
-/* Raised surfaces */
+/* Raised surfaces — kept shallow for a minimal, near-flat softness. */
 @utility neu {
   box-shadow:
-    9px 9px 18px var(--shadow-dark),
-    -9px -9px 18px var(--shadow-light);
+    5px 5px 12px var(--shadow-dark),
+    -5px -5px 12px var(--shadow-light);
 }
 @utility neu-sm {
   box-shadow:
-    5px 5px 10px var(--shadow-dark),
-    -5px -5px 10px var(--shadow-light);
+    3px 3px 7px var(--shadow-dark),
+    -3px -3px 7px var(--shadow-light);
 }
 
 /* Pressed / recessed surfaces */
 @utility neu-inset {
   box-shadow:
-    inset 6px 6px 12px var(--shadow-dark),
-    inset -6px -6px 12px var(--shadow-light);
+    inset 4px 4px 9px var(--shadow-dark),
+    inset -4px -4px 9px var(--shadow-light);
 }
 @utility neu-inset-sm {
   box-shadow:
-    inset 3px 3px 7px var(--shadow-dark),
-    inset -3px -3px 7px var(--shadow-light);
+    inset 2px 2px 5px var(--shadow-dark),
+    inset -2px -2px 5px var(--shadow-light);
 }
 
 @utility bg-hero-grad {
