@@ -51,6 +51,7 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [missingKey, setMissingKey] = useState(false);
   const [updatedAt, setUpdatedAt] = useState<number | null>(null);
+  const [announcement, setAnnouncement] = useState("");
 
   const abortRef = useRef<AbortController | null>(null);
   const updatedAtRef = useRef(0);
@@ -87,6 +88,7 @@ export default function Home() {
       if (!opts?.silent) setSelectedDay(0);
       updatedAtRef.current = Date.now();
       setUpdatedAt(updatedAtRef.current);
+      setAnnouncement(`Weather for ${payload.current.name} updated`);
       try {
         localStorage.setItem(LAST_CITY_KEY, payload.current.name);
       } catch {
@@ -173,6 +175,10 @@ export default function Home() {
 
   return (
     <main className="w-full max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-10 py-6" aria-busy={loading}>
+      {/* Announces search/refresh results to assistive tech. */}
+      <p role="status" aria-live="polite" className="sr-only">
+        {announcement}
+      </p>
       <TopBar
         city={current ? city : "—"}
         country={current?.sys.country}
