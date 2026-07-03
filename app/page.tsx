@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Cloud, RefreshCw, TriangleAlert, X } from "lucide-react";
+import { Cloud, MapPin, RefreshCw, TriangleAlert, WifiOff, X } from "lucide-react";
 import TopBar from "./components/TopBar";
 import TodayCard from "./components/TodayCard";
 import ForecastCard from "./components/ForecastCard";
@@ -24,6 +24,9 @@ import { findSevereHour, fmtHour, fmtTime, getDayName, getShortDay, msToKmh } fr
 
 const DEFAULT_CITY = "Manila";
 const LAST_CITY_KEY = "ulap-last-city";
+const PAYLOAD_KEY = "ulap-last-payload";
+const RECENTS_KEY = "ulap-recents";
+const GEO_ASKED_KEY = "ulap-geo-asked";
 /** Weather observations refresh roughly every 10 minutes upstream. */
 const REFRESH_MS = 10 * 60 * 1000;
 
@@ -52,9 +55,12 @@ export default function Home() {
   const [missingKey, setMissingKey] = useState(false);
   const [updatedAt, setUpdatedAt] = useState<number | null>(null);
   const [announcement, setAnnouncement] = useState("");
+  const [staleLabel, setStaleLabel] = useState<string | null>(null);
+  const [askGeo, setAskGeo] = useState(false);
 
   const abortRef = useRef<AbortController | null>(null);
   const updatedAtRef = useRef(0);
+  const hasDataRef = useRef(false);
 
   const fetchWeatherData = useCallback(async (query: Query, opts?: { silent?: boolean }) => {
     // A newer request supersedes any in-flight one.
@@ -86,16 +92,49 @@ export default function Home() {
       setCity(payload.current.name);
       setInputCity(payload.current.name);
       if (!opts?.silent) setSelectedDay(0);
+      hasDataRef.current = true;
+      setStaleLabel(null);
       updatedAtRef.current = Date.now();
       setUpdatedAt(updatedAtRef.current);
       setAnnouncement(`Weather for ${payload.current.name} updated`);
       try {
         localStorage.setItem(LAST_CITY_KEY, payload.current.name);
+        // Keep a last-known copy so the app still shows weather offline.
+        localStorage.setItem(PAYLOAD_KEY, JSON.stringify({ payload, at: Date.now() }));
+        const raw = localStorage.getItem(RECENTS_KEY);
+        const list: { name: string; lat: number; lon: number }[] = raw ? JSON.parse(raw) : [];
+        const next = [
+          { name: payload.current.name, lat: payload.current.coord.lat, lon: payload.current.coord.lon },
+          ...list.filter((r) => r.name !== payload.current.name),
+        ].slice(0, 5);
+        localStorage.setItem(RECENTS_KEY, JSON.stringify(next));
       } catch {
         // storage unavailable — skip persistence
       }
     } catch (err) {
       if (err instanceof DOMException && err.name === "AbortError") return;
+      // Network failure with nothing on screen: fall back to the last-known copy.
+      if (!hasDataRef.current) {
+        try {
+          const raw = localStorage.getItem(PAYLOAD_KEY);
+          if (raw) {
+            const { payload, at }: { payload: WeatherPayload; at: number } = JSON.parse(raw);
+            setCurrent(payload.current);
+            setHourlyAll(payload.hourly);
+            setDays(payload.days);
+            setAir(payload.air);
+            setOtherCities(payload.cities);
+            setCity(payload.current.name);
+            setInputCity(payload.current.name);
+            hasDataRef.current = true;
+            setStaleLabel(new Date(at).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }));
+            setAnnouncement(`Offline — showing saved weather for ${payload.current.name}`);
+            return;
+          }
+        } catch {
+          // corrupt cache — fall through to the error state
+        }
+      }
       setError(err instanceof Error ? err.message : "Failed to fetch weather.");
     } finally {
       if (abortRef.current === ac) setLoading(false);
@@ -104,14 +143,28 @@ export default function Home() {
 
   useEffect(() => {
     let saved: string | null = null;
+    let geoAsked = true;
     try {
       saved = localStorage.getItem(LAST_CITY_KEY);
+      geoAsked = localStorage.getItem(GEO_ASKED_KEY) !== null;
     } catch {
       // storage unavailable — fall back to the default city
     }
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- initial fetch on mount; loading already starts true
+    if (!saved && !geoAsked) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time first-visit setup on mount
+      setAskGeo(true);
+    }
     fetchWeatherData(saved || DEFAULT_CITY);
   }, [fetchWeatherData]);
+
+  const dismissGeo = useCallback(() => {
+    setAskGeo(false);
+    try {
+      localStorage.setItem(GEO_ASKED_KEY, "1");
+    } catch {
+      // storage unavailable — the offer just reappears next visit
+    }
+  }, []);
 
   // Keep the data fresh: silent refetch on an interval and on tab refocus.
   useEffect(() => {
@@ -236,6 +289,40 @@ export default function Home() {
         </div>
       ) : (
         <>
+          {staleLabel && (
+            <div
+              role="status"
+              className="flex items-center gap-2.5 mb-6 px-5 py-3 rounded-2xl border border-edge neu-sm text-sm font-medium text-muted"
+            >
+              <WifiOff size={16} aria-hidden="true" />
+              Offline — showing weather saved {staleLabel}. It will refresh automatically when you are back online.
+            </div>
+          )}
+          {askGeo && (
+            <div className="flex flex-wrap items-center gap-3 mb-6 px-5 py-3 rounded-2xl border border-edge neu-sm text-sm text-ink">
+              <MapPin size={16} className="text-accent" aria-hidden="true" />
+              Show weather for your current location instead?
+              <div className="flex gap-2 ml-auto">
+                <button
+                  type="button"
+                  onClick={() => {
+                    dismissGeo();
+                    handleLocate();
+                  }}
+                  className="bg-hero-grad text-white rounded-full px-4 py-1.5 text-xs font-semibold cursor-pointer neu-sm hover:opacity-90 transition-opacity duration-150"
+                >
+                  Use my location
+                </button>
+                <button
+                  type="button"
+                  onClick={dismissGeo}
+                  className="rounded-full px-4 py-1.5 text-xs font-medium text-muted border border-edge neu-sm active:neu-inset-sm cursor-pointer transition-shadow duration-150"
+                >
+                  Not now
+                </button>
+              </div>
+            </div>
+          )}
           {severe && (
             <div
               role="status"

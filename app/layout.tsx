@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import ServiceWorker from "./components/ServiceWorker";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -16,6 +17,10 @@ export const metadata: Metadata = {
   title: "ulap — weather dashboard",
   description:
     "A responsive weather dashboard for the Philippines — live conditions, 5-day forecast, rain probability, and air quality, powered by OpenWeatherMap.",
+  icons: {
+    icon: "/icon-192.png",
+    apple: "/apple-touch-icon.png",
+  },
 };
 
 export const viewport: Viewport = {
@@ -41,6 +46,7 @@ export default function RootLayout({
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         {children}
+        <ServiceWorker />
       </body>
     </html>
   );
