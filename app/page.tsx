@@ -295,8 +295,6 @@ export default function Home() {
         {announcement}
       </p>
       <TopBar
-        city={current ? city : "—"}
-        country={current?.sys.country}
         inputCity={inputCity}
         loading={loading}
         updatedAt={updatedAt}
