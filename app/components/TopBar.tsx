@@ -13,8 +13,8 @@ function loadRecents(): GeoSuggestion[] {
   try {
     const raw = localStorage.getItem(RECENTS_KEY);
     if (!raw) return [];
-    const list: { name: string; lat: number; lon: number }[] = JSON.parse(raw);
-    return list.map((r) => ({ name: r.name, country: "PH", lat: r.lat, lon: r.lon }));
+    const list: { name: string; state?: string; lat: number; lon: number }[] = JSON.parse(raw);
+    return list.map((r) => ({ name: r.name, state: r.state, country: "PH", lat: r.lat, lon: r.lon }));
   } catch {
     return [];
   }
