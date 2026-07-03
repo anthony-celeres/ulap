@@ -1,5 +1,6 @@
 "use client";
 
+import { ChevronRight } from "lucide-react";
 import type { CitySummary } from "../types/weather";
 import WeatherIcon from "./WeatherIcon";
 
@@ -30,6 +31,7 @@ export default function CitiesList({ cities, onSelect }: CitiesListProps) {
             <div className="flex items-center gap-3">
               <WeatherIcon code={city.code} size={30} />
               <div className="text-xl font-bold text-ink">{city.temp}°</div>
+              <ChevronRight size={16} className="text-muted" aria-hidden="true" />
             </div>
           </button>
         ))}
