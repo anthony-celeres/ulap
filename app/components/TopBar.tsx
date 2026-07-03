@@ -201,11 +201,11 @@ export default function TopBar({
           }}
           onBlur={() => setTimeout(() => setOpen(false), 150)}
         />
-        {/* Raised pill like the active view toggles. */}
+        {/* Accent-filled but still soft: same raised/pressed shadows as the pills. */}
         <button
           type="submit"
           disabled={loading}
-          className="bg-surface text-accent neu-sm active:neu-inset-sm rounded-full px-5 py-2.5 text-sm font-semibold cursor-pointer transition-shadow duration-150 whitespace-nowrap disabled:opacity-60 disabled:cursor-wait"
+          className="bg-accent text-white neu-sm active:neu-inset-sm rounded-full px-5 py-2.5 text-sm font-semibold cursor-pointer transition-shadow duration-150 whitespace-nowrap disabled:opacity-60 disabled:cursor-wait"
         >
           Search
         </button>
