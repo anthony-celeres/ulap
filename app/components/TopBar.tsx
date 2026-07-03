@@ -161,7 +161,7 @@ export default function TopBar({
       </div>
 
       <form
-        className="relative flex-1 min-w-[220px] flex gap-3"
+        className="relative flex-1 min-w-[220px]"
         role="search"
         onSubmit={(e) => {
           e.preventDefault();
@@ -176,7 +176,7 @@ export default function TopBar({
         />
         <input
           ref={inputRef}
-          className="flex-1 min-w-0 bg-transparent rounded-full border border-edge neu-inset-sm py-2.5 pl-11 pr-4 text-sm text-ink placeholder:text-muted outline-none"
+          className="w-full bg-transparent rounded-full border border-edge neu-inset-sm py-2.5 pl-11 pr-24 text-sm text-ink placeholder:text-muted outline-none"
           type="text"
           placeholder="Search a city in the Philippines…"
           role="combobox"
@@ -201,12 +201,13 @@ export default function TopBar({
           }}
           onBlur={() => setTimeout(() => setOpen(false), 150)}
         />
+        {/* Nested inside the field so the bar reads as one control. */}
         <button
           type="submit"
           disabled={loading}
-          className="bg-hero-grad text-white rounded-full px-6 py-2.5 text-sm font-semibold cursor-pointer neu-sm hover:opacity-90 active:opacity-75 transition-opacity duration-150 whitespace-nowrap disabled:opacity-60 disabled:cursor-wait"
+          className="absolute right-1.5 top-1/2 -translate-y-1/2 bg-hero-grad text-white rounded-full px-4 py-1.5 text-xs font-semibold cursor-pointer hover:opacity-90 active:opacity-75 transition-opacity duration-150 whitespace-nowrap disabled:opacity-60 disabled:cursor-wait"
         >
-          {loading ? "Loading…" : "Search"}
+          Search
         </button>
 
         {open && items.length > 0 && (
