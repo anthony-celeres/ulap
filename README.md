@@ -119,7 +119,7 @@ scripts/gitflow.sh ship             # push, PR to develop, merge
 scripts/gitflow.sh release          # open the develop → main PR
 ```
 
-The `commit-msg` hook enforces `type(scope): subject` conventional messages and blocks AI co-author trailers.
+The `commit-msg` hook enforces `type(scope): subject` conventional messages and blocks AI co-author trailers. `ship` refuses features with fewer than 3 commits (pass `--force` for a genuinely complete small change) — let work accumulate instead of merging one-commit branches.
 
 ## Credits
 
