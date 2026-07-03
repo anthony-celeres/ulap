@@ -9,13 +9,36 @@ export interface RainPoint {
 interface RainChartProps {
   dayName: string;
   data: RainPoint[];
+  /** Temperatures aligned with `data`, drawn as a trend line. */
+  temps?: number[];
 }
 
-export default function RainChart({ dayName, data }: RainChartProps) {
+export default function RainChart({ dayName, data, temps }: RainChartProps) {
+  const hasTemps = !!temps && temps.length === data.length && temps.length > 1;
+  let tempPath = "";
+  let tempMin = 0;
+  let tempMax = 0;
+  if (hasTemps) {
+    tempMin = Math.min(...temps);
+    tempMax = Math.max(...temps);
+    const span = Math.max(tempMax - tempMin, 1);
+    tempPath = `M${temps
+      .map((t, i) => `${(i / (temps.length - 1)) * 100},${90 - ((t - tempMin) / span) * 80}`)
+      .join(" L")}`;
+  }
+
   return (
-    <section aria-label={`Chance of rain, ${dayName}`} className="h-full flex flex-col p-6 rounded-3xl neu">
-      <div className="text-sm font-semibold text-ink mb-4">
-        Chance of rain <span className="text-muted font-medium">· {dayName}</span>
+    <section aria-label={`Forecast chart, ${dayName}`} className="h-full flex flex-col p-6 rounded-3xl neu">
+      <div className="flex items-baseline justify-between gap-2 mb-4">
+        <div className="text-sm font-semibold text-ink">
+          Chance of rain <span className="text-muted font-medium">· {dayName}</span>
+        </div>
+        {hasTemps && (
+          <div className="text-xs text-muted whitespace-nowrap">
+            <span aria-hidden="true" className="inline-block w-3 border-t-2 border-accent align-middle mr-1"></span>
+            {Math.round(tempMax)}° / {Math.round(tempMin)}°
+          </div>
+        )}
       </div>
 
       {data.length === 0 ? (
@@ -28,6 +51,25 @@ export default function RainChart({ dayName, data }: RainChartProps) {
             <span>0%</span>
           </div>
 
+          {hasTemps && (
+            <svg
+              className="absolute top-4 bottom-[38px] left-12 right-4 w-[calc(100%-4rem)] h-[calc(100%-3.4rem)] pointer-events-none"
+              viewBox="0 0 100 100"
+              preserveAspectRatio="none"
+              aria-hidden="true"
+            >
+              <path
+                d={tempPath}
+                fill="none"
+                stroke="var(--accent)"
+                strokeWidth={2}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                vectorEffect="non-scaling-stroke"
+                opacity={0.85}
+              />
+            </svg>
+          )}
           <div className="ml-8 flex gap-1 h-full">
             {data.map((item, idx) => (
               <div key={item.label} className="flex-1 min-w-0 flex flex-col">
