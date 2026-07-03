@@ -57,6 +57,16 @@ export interface CitySummary {
   temp: number;
 }
 
+/** One display hour, interpolated from the 3-hourly forecast slots. */
+export interface HourlyPoint {
+  dt: number;
+  temp: number;
+  /** OpenWeatherMap condition id of the nearest real slot. */
+  code: number;
+  /** Probability of precipitation of the nearest real slot, 0–1. */
+  pop: number;
+}
+
 /** One result from the OpenWeatherMap Geocoding API (/geo/1.0/direct). */
 export interface GeoSuggestion {
   name: string;
