@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Clock, Cloud, LocateFixed, MapPin, Moon, Search, Sun } from "lucide-react";
+import { Clock, Cloud, LocateFixed, MapPin, Moon, RefreshCw, Search, Sun } from "lucide-react";
 import { useTheme } from "../hooks/useTheme";
 import type { GeoSuggestion } from "../types/weather";
 
@@ -25,10 +25,12 @@ interface TopBarProps {
   country?: string;
   inputCity: string;
   loading: boolean;
+  updatedAt: number | null;
   onCityInput: (city: string) => void;
   onSearch: (city: string) => void;
   onSelectLocation: (place: GeoSuggestion) => void;
   onLocate: () => void;
+  onRefresh: () => void;
 }
 
 const iconButtonClass =
@@ -40,15 +42,52 @@ function suggestionLabel(s: GeoSuggestion) {
   return s.state ?? "Philippines";
 }
 
+function UpdatedBadge({ updatedAt, loading, onRefresh }: { updatedAt: number | null; loading: boolean; onRefresh: () => void }) {
+  const [label, setLabel] = useState("Updated just now");
+
+  useEffect(() => {
+    if (!updatedAt) return;
+    const compute = () => {
+      const mins = Math.floor((Date.now() - updatedAt) / 60_000);
+      setLabel(mins < 1 ? "Updated just now" : `Updated ${mins} min ago`);
+    };
+    const raf = requestAnimationFrame(compute);
+    const id = setInterval(compute, 60_000);
+    return () => {
+      cancelAnimationFrame(raf);
+      clearInterval(id);
+    };
+  }, [updatedAt]);
+
+  if (!updatedAt) return null;
+
+  return (
+    <div className="flex items-center gap-2 text-xs text-muted whitespace-nowrap">
+      <span className="hidden lg:inline">{label}</span>
+      <button
+        type="button"
+        onClick={onRefresh}
+        aria-label="Refresh weather now"
+        title={label}
+        className="flex items-center justify-center w-11 h-11 rounded-full bg-surface text-muted border border-edge neu-sm active:neu-inset-sm transition-shadow duration-150 cursor-pointer"
+      >
+        <RefreshCw size={16} className={loading ? "animate-spin" : ""} aria-hidden="true" />
+      </button>
+    </div>
+  );
+}
+
 export default function TopBar({
   city,
   country,
   inputCity,
   loading,
+  updatedAt,
   onCityInput,
   onSearch,
   onSelectLocation,
   onLocate,
+  onRefresh,
 }: TopBarProps) {
   const { theme, toggleTheme } = useTheme();
   const [suggestions, setSuggestions] = useState<GeoSuggestion[]>([]);
@@ -219,7 +258,8 @@ export default function TopBar({
         )}
       </form>
 
-      <div className="flex gap-3 ml-auto">
+      <div className="flex items-center gap-3 ml-auto">
+        <UpdatedBadge updatedAt={updatedAt} loading={loading} onRefresh={onRefresh} />
         <button type="button" className={iconButtonClass} onClick={onLocate} aria-label="Use my location" title="Use my location">
           <LocateFixed size={18} aria-hidden="true" />
         </button>
