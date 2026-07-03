@@ -389,7 +389,7 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="lg:col-span-4 xl:col-span-3">
+            <div className="lg:col-span-4 xl:col-span-4">
               <ChartPanel
                 panel={panel}
                 onPanelChange={setPanel}
@@ -400,7 +400,7 @@ export default function Home() {
               />
             </div>
 
-            <div className="lg:col-span-8 xl:col-span-6">
+            <div className="lg:col-span-8 xl:col-span-5">
               <MapSection city={city} lat={current.coord.lat} lon={current.coord.lon} />
             </div>
             <div className="lg:col-span-12 xl:col-span-3">
@@ -422,8 +422,8 @@ function DashboardSkeleton() {
           <div key={i} className="h-[360px] lg:h-full rounded-3xl bg-well neu-inset-sm animate-pulse" />
         ))}
       </div>
-      <div className="lg:col-span-4 xl:col-span-3 h-[320px] rounded-3xl bg-well neu-inset-sm animate-pulse" />
-      <div className="lg:col-span-8 xl:col-span-6 h-[320px] rounded-3xl bg-well neu-inset-sm animate-pulse" />
+      <div className="lg:col-span-4 xl:col-span-4 h-[320px] rounded-3xl bg-well neu-inset-sm animate-pulse" />
+      <div className="lg:col-span-8 xl:col-span-5 h-[320px] rounded-3xl bg-well neu-inset-sm animate-pulse" />
       <div className="lg:col-span-12 xl:col-span-3 h-[320px] rounded-3xl bg-well neu-inset-sm animate-pulse" />
     </div>
   );
