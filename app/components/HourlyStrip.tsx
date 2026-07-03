@@ -50,27 +50,28 @@ export default function HourlyStrip({ hours, nowDt }: HourlyStripProps) {
   const isPast = (p: HourlyPoint) => nowDt !== undefined && p.dt + 3600 <= nowDt;
 
   // Bring the current hour's column into view (minus one column of context).
+  // Child 0 is the sticky AM/PM label column, so hour columns start at 1.
   const nowHour = nowDt !== undefined ? new Date(nowDt * 1000).getUTCHours() : 0;
-  const scrollToIndex = Math.max(0, (nowHour % 12) - 1);
+  const scrollToIndex = Math.max(1, nowHour % 12);
 
   return (
     <section aria-label="Today's hourly forecast, midnight to 11 PM" className="h-full rounded-3xl neu p-4 xl:p-5">
-      <div className="h-full flex gap-1">
-        <div aria-hidden="true" className="shrink-0 w-8 h-full flex flex-col justify-center gap-1 text-center text-xs font-semibold text-muted">
+      <Carousel ariaLabel="Hours, midnight to 11 PM" scrollToIndex={scrollToIndex} scrollPadding={38}>
+        {/* Sticky, so the labels hold position while the hours scroll under them. */}
+        <div
+          aria-hidden="true"
+          className="sticky left-0 z-10 shrink-0 w-8 bg-surface h-full flex flex-col justify-center gap-1 text-center text-xs font-semibold text-muted"
+        >
           <span className="flex-1 max-h-44 flex items-center justify-center">AM</span>
           <span className="flex-1 max-h-44 flex items-center justify-center">PM</span>
         </div>
-        <div className="flex-1 min-w-0">
-          <Carousel ariaLabel="Hours, midnight to 11 PM" scrollToIndex={scrollToIndex}>
-            {Array.from({ length: 12 }, (_, i) => (
-              <div key={hours[i].dt} className="flex-1 min-w-16 shrink-0 snap-start h-full flex flex-col justify-center gap-1">
-                <HourCell point={hours[i]} now={isNow(hours[i])} past={isPast(hours[i])} />
-                <HourCell point={hours[i + 12]} now={isNow(hours[i + 12])} past={isPast(hours[i + 12])} />
-              </div>
-            ))}
-          </Carousel>
-        </div>
-      </div>
+        {Array.from({ length: 12 }, (_, i) => (
+          <div key={hours[i].dt} className="flex-1 min-w-16 shrink-0 snap-start h-full flex flex-col justify-center gap-1">
+            <HourCell point={hours[i]} now={isNow(hours[i])} past={isPast(hours[i])} />
+            <HourCell point={hours[i + 12]} now={isNow(hours[i + 12])} past={isPast(hours[i + 12])} />
+          </div>
+        ))}
+      </Carousel>
     </section>
   );
 }
