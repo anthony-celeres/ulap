@@ -25,6 +25,7 @@ export interface OpenMeteoForecast {
     temperature_2m: number[];
     precipitation_probability: (number | null)[];
     weather_code: number[];
+    uv_index?: (number | null)[];
   };
   daily: {
     time: string[];
@@ -43,6 +44,8 @@ export interface HourlyPoint {
   code: number;
   /** Probability of precipitation, 0–100. */
   pop: number;
+  /** UV index for the hour. */
+  uv?: number;
 }
 
 /** One forecast day. */
@@ -66,6 +69,15 @@ export interface CitySummary {
   /** OpenWeatherMap condition id. */
   code: number;
   temp: number;
+}
+
+/** Everything the dashboard needs, assembled by /api/weather. */
+export interface WeatherPayload {
+  current: CurrentWeather;
+  hourly: HourlyPoint[];
+  days: DailyForecast[];
+  air: AirQuality | null;
+  cities: CitySummary[];
 }
 
 /** One result from the OpenWeatherMap Geocoding API (/geo/1.0/direct). */
