@@ -13,13 +13,13 @@ interface HourlyStripProps {
   nowDt?: number;
 }
 
-function HourTile({ point, now }: { point: HourlyPoint; now: boolean }) {
+function HourTile({ point, now, past }: { point: HourlyPoint; now: boolean; past: boolean }) {
   return (
     <div
       role="listitem"
       className={`flex-1 w-[88px] flex flex-col items-center justify-center gap-1.5 p-2 rounded-3xl border ${
         now ? "border-accent neu-inset" : "border-edge neu-sm"
-      }`}
+      } ${past ? "opacity-50" : ""}`}
       title={`${fmtHour(point.dt, 0)}: ${Math.round(point.temp)}°, ${Math.round(point.pop)}% rain`}
     >
       <div className={`text-xs font-semibold whitespace-nowrap ${now ? "text-accent" : "text-muted"}`}>
@@ -46,13 +46,18 @@ export default function HourlyStrip({ hours, nowDt }: HourlyStripProps) {
 
   const isNow = (p: HourlyPoint) =>
     nowDt !== undefined && nowDt >= p.dt && nowDt < p.dt + 3600;
+  const isPast = (p: HourlyPoint) => nowDt !== undefined && p.dt + 3600 <= nowDt;
+
+  // Bring the current hour's column into view (minus one column of context).
+  const nowHour = nowDt !== undefined ? new Date(nowDt * 1000).getUTCHours() : 0;
+  const scrollToIndex = Math.max(0, (nowHour % 12) - 1);
 
   return (
-    <Carousel ariaLabel="Today's hourly forecast, midnight to 11 PM">
+    <Carousel ariaLabel="Today's hourly forecast, midnight to 11 PM" scrollToIndex={scrollToIndex}>
       {Array.from({ length: 12 }, (_, i) => (
         <div key={hours[i].dt} className="shrink-0 snap-start h-full flex flex-col gap-3 xl:gap-4">
-          <HourTile point={hours[i]} now={isNow(hours[i])} />
-          <HourTile point={hours[i + 12]} now={isNow(hours[i + 12])} />
+          <HourTile point={hours[i]} now={isNow(hours[i])} past={isPast(hours[i])} />
+          <HourTile point={hours[i + 12]} now={isNow(hours[i + 12])} past={isPast(hours[i + 12])} />
         </div>
       ))}
     </Carousel>
