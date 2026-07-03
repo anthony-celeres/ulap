@@ -1,13 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Cloud, MapPin, RefreshCw, TriangleAlert, WifiOff, X } from "lucide-react";
+import { Cloud, MapPin, TriangleAlert, WifiOff, X } from "lucide-react";
 import TopBar from "./components/TopBar";
 import TodayCard from "./components/TodayCard";
 import WeekList from "./components/WeekList";
 import HourlyStrip from "./components/HourlyStrip";
-import RainChart from "./components/RainChart";
-import AirQualityCard from "./components/AirQualityCard";
+import ChartPanel from "./components/ChartPanel";
 import MapSection from "./components/MapSection";
 import CitiesList from "./components/CitiesList";
 import type {
@@ -249,10 +248,12 @@ export default function Home() {
         country={current?.sys.country}
         inputCity={inputCity}
         loading={loading}
+        updatedAt={updatedAt}
         onCityInput={setInputCity}
         onSearch={handleSearch}
         onSelectLocation={handleSelectLocation}
         onLocate={handleLocate}
+        onRefresh={() => current && fetchWeatherData({ lat: current.coord.lat, lon: current.coord.lon }, { silent: true })}
       />
 
       {error && current && (
@@ -335,44 +336,6 @@ export default function Home() {
               {severeLabel}
             </div>
           )}
-          <div className="flex flex-wrap items-center gap-3 mb-6">
-            <div className="flex gap-1 p-1.5 rounded-full neu-inset-sm" role="group" aria-label="Forecast view">
-              <button
-                type="button"
-                className={dayTabClass(view === "today")}
-                onClick={() => {
-                  setView("today");
-                  setSelectedDay(0);
-                }}
-              >
-                Today
-              </button>
-              <button
-                type="button"
-                className={dayTabClass(view === "week")}
-                onClick={() => setView("week")}
-                disabled={days.length < 2}
-              >
-                Next 6 days
-              </button>
-            </div>
-            <div className="ml-auto flex items-center gap-4">
-              <UpdatedBadge
-                updatedAt={updatedAt}
-                loading={loading}
-                onRefresh={() => fetchWeatherData({ lat: current.coord.lat, lon: current.coord.lon }, { silent: true })}
-              />
-              <div className="flex gap-1 p-1.5 rounded-full neu-inset-sm" role="group" aria-label="Chart panel">
-                <button type="button" className={dayTabClass(panel === "rain")} onClick={() => setPanel("rain")}>
-                  Forecast
-                </button>
-                <button type="button" className={dayTabClass(panel === "air")} onClick={() => setPanel("air")}>
-                  Air quality
-                </button>
-              </div>
-            </div>
-          </div>
-
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 xl:gap-6">
             <div className="lg:col-span-4 xl:col-span-3">
               <TodayCard
@@ -391,22 +354,50 @@ export default function Home() {
               />
             </div>
 
-            {/* The forecast strip gets the full remaining width; the
-                rain/air panel lives on the second row beside the map. */}
-            <div className="lg:col-span-8 xl:col-span-9">
-              {view === "today" ? (
-                <HourlyStrip hours={todayHours} nowDt={current.dt + tz} />
-              ) : (
-                <WeekList days={weekDays} popByDay={popByDay} selectedDay={selectedDay} onSelect={setSelectedDay} />
-              )}
+            {/* The view toggle sits directly on the strip it controls. */}
+            <div className="lg:col-span-8 xl:col-span-9 flex flex-col">
+              <div
+                className="self-start flex gap-1 p-1.5 rounded-full neu-inset-sm mb-3"
+                role="group"
+                aria-label="Forecast view"
+              >
+                <button
+                  type="button"
+                  className={dayTabClass(view === "today")}
+                  onClick={() => {
+                    setView("today");
+                    setSelectedDay(0);
+                  }}
+                >
+                  Today
+                </button>
+                <button
+                  type="button"
+                  className={dayTabClass(view === "week")}
+                  onClick={() => setView("week")}
+                  disabled={days.length < 2}
+                >
+                  Next 6 days
+                </button>
+              </div>
+              <div className="flex-1 min-h-0">
+                {view === "today" ? (
+                  <HourlyStrip hours={todayHours} nowDt={current.dt + tz} />
+                ) : (
+                  <WeekList days={weekDays} popByDay={popByDay} selectedDay={selectedDay} onSelect={setSelectedDay} />
+                )}
+              </div>
             </div>
 
             <div className="lg:col-span-4 xl:col-span-3">
-              {panel === "rain" ? (
-                <RainChart dayName={selectedDayName} data={rainData} temps={chartTemps} />
-              ) : (
-                <AirQualityCard air={air} dayName="now" />
-              )}
+              <ChartPanel
+                panel={panel}
+                onPanelChange={setPanel}
+                dayName={selectedDayName}
+                data={rainData}
+                temps={chartTemps}
+                air={air}
+              />
             </div>
 
             <div className="lg:col-span-8 xl:col-span-6">
@@ -419,49 +410,6 @@ export default function Home() {
         </>
       )}
     </main>
-  );
-}
-
-function UpdatedBadge({
-  updatedAt,
-  loading,
-  onRefresh,
-}: {
-  updatedAt: number | null;
-  loading: boolean;
-  onRefresh: () => void;
-}) {
-  const [label, setLabel] = useState("Updated just now");
-
-  useEffect(() => {
-    if (!updatedAt) return;
-    const compute = () => {
-      const mins = Math.floor((Date.now() - updatedAt) / 60_000);
-      setLabel(mins < 1 ? "Updated just now" : `Updated ${mins} min ago`);
-    };
-    const raf = requestAnimationFrame(compute);
-    const id = setInterval(compute, 60_000);
-    return () => {
-      cancelAnimationFrame(raf);
-      clearInterval(id);
-    };
-  }, [updatedAt]);
-
-  if (!updatedAt) return null;
-
-  return (
-    <div className="flex items-center gap-2 text-xs text-muted whitespace-nowrap">
-      <span className="hidden sm:inline">{label}</span>
-      <button
-        type="button"
-        onClick={onRefresh}
-        aria-label="Refresh weather now"
-        title="Refresh"
-        className="flex items-center justify-center w-8 h-8 rounded-full bg-surface text-muted neu-sm active:neu-inset-sm transition-shadow duration-150 cursor-pointer"
-      >
-        <RefreshCw size={13} className={loading ? "animate-spin" : ""} aria-hidden="true" />
-      </button>
-    </div>
   );
 }
 
