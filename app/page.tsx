@@ -4,13 +4,12 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Cloud, MapPin, RefreshCw, TriangleAlert, WifiOff, X } from "lucide-react";
 import TopBar from "./components/TopBar";
 import TodayCard from "./components/TodayCard";
-import ForecastCard from "./components/ForecastCard";
+import WeekList from "./components/WeekList";
 import HourlyStrip from "./components/HourlyStrip";
 import RainChart from "./components/RainChart";
 import AirQualityCard from "./components/AirQualityCard";
 import MapSection from "./components/MapSection";
 import CitiesList from "./components/CitiesList";
-import Carousel from "./components/Carousel";
 import type {
   AirQuality,
   CitySummary,
@@ -20,7 +19,7 @@ import type {
   HourlyPoint,
   WeatherPayload,
 } from "./types/weather";
-import { findSevereHour, fmtHour, fmtTime, getDayName, getShortDay, msToKmh } from "./utils/weather";
+import { findSevereHour, fmtHour, fmtTime, getDayName, msToKmh } from "./utils/weather";
 
 const DEFAULT_CITY = "Manila";
 const LAST_CITY_KEY = "ulap-last-city";
@@ -220,6 +219,10 @@ export default function Home() {
   const chartTemps = chartHours.map((h) => h.temp);
   const selectedDayName =
     selectedDay === 0 ? "Today" : selectedDay === 1 ? "Tomorrow" : selected ? getDayName(selected.dt, 0) : "";
+  const weekDays = days.slice(0, 7);
+  const popByDay = weekDays.map((_, i) =>
+    Math.max(0, ...hourlyAll.slice(i * 24, i * 24 + 24).map((h) => h.pop))
+  );
 
   // Current-hour UV and any severe weather in the next 24 hours.
   const currentUv = hourlyAll.find((h) => nowLocal >= h.dt && nowLocal < h.dt + 3600)?.uv;
@@ -394,21 +397,7 @@ export default function Home() {
               {view === "today" ? (
                 <HourlyStrip hours={todayHours} nowDt={current.dt + tz} />
               ) : (
-                <Carousel ariaLabel="Daily forecast for the next 6 days">
-                  {days.slice(0, 7).map((d, i) => (
-                    <div key={d.key} role="listitem" className="w-[136px] shrink-0 snap-start h-full">
-                      <ForecastCard
-                        dayName={i === 0 ? "Today" : getShortDay(d.dt, 0)}
-                        code={d.code}
-                        condition={d.condition}
-                        min={d.min}
-                        max={d.max}
-                        selected={selectedDay === i}
-                        onSelect={() => setSelectedDay(i)}
-                      />
-                    </div>
-                  ))}
-                </Carousel>
+                <WeekList days={weekDays} popByDay={popByDay} selectedDay={selectedDay} onSelect={setSelectedDay} />
               )}
             </div>
 
@@ -462,7 +451,7 @@ function UpdatedBadge({
 
   return (
     <div className="flex items-center gap-2 text-xs text-muted whitespace-nowrap">
-      <span>{label}</span>
+      <span className="hidden sm:inline">{label}</span>
       <button
         type="button"
         onClick={onRefresh}
