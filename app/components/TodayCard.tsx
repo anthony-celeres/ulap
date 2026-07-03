@@ -1,12 +1,16 @@
 "use client";
 
+import { Sunrise, Sunset } from "lucide-react";
+import WeatherIcon from "./WeatherIcon";
+
 interface TodayCardProps {
   day: string;
   time: string;
-  icon: string;
+  code: number;
+  condition: string;
   temp: number;
   realFeel: number;
-  wind: string;
+  windKmh: number;
   pressure: number;
   humidity: number;
   sunrise: string;
@@ -16,31 +20,58 @@ interface TodayCardProps {
 export default function TodayCard({
   day,
   time,
-  icon,
+  code,
+  condition,
   temp,
   realFeel,
-  wind,
+  windKmh,
   pressure,
   humidity,
   sunrise,
-  sunset
+  sunset,
 }: TodayCardProps) {
+  const details = [
+    { label: "Real feel", value: `${realFeel}°` },
+    { label: "Wind", value: `${windKmh} km/h` },
+    { label: "Humidity", value: `${humidity}%` },
+    { label: "Pressure", value: `${pressure} hPa` },
+  ];
+
   return (
-    <div className="relative flex flex-col gap-1.5 p-5 bg-[linear-gradient(135deg,#6366f1_0%,#a855f7_100%)] border border-[#e2e8f0] rounded-2xl min-h-[180px] text-white today-card">
-      <div className="text-sm font-semibold day-label">{day}</div>
-      <div className="text-[11px] text-white/80 time">{time}</div>
-      <div className="absolute right-4 top-7 text-4xl w-icon-big">{icon}</div>
-      <div className="text-[42px] font-bold leading-none my-1.5 temp-big">{temp}°</div>
-      <div className="text-[11px] text-white/90 leading-[1.9] mt-0.5 meta">
-        Real Feel {realFeel}°<br />
-        Wind: {wind} km/h<br />
-        Pressure: {pressure}MB<br />
-        Humidity: {humidity}%
+    <section
+      aria-label={`Current weather: ${condition}, ${temp} degrees`}
+      className="h-full flex flex-col gap-4 p-6 xl:p-7 rounded-3xl neu"
+    >
+      <div className="flex items-start justify-between">
+        <div>
+          <div className="text-base font-semibold text-ink">{day}</div>
+          <div className="text-xs text-muted mt-0.5">{time}</div>
+        </div>
+        <WeatherIcon code={code} size={52} />
       </div>
-      <div className="flex flex-wrap gap-2.5 text-[11px] text-white/80 sunrise-row">
-        <span>🌅 {sunrise}</span>
-        <span>🌇 {sunset}</span>
+
+      <div>
+        <div className="text-6xl xl:text-7xl font-bold leading-none text-gradient">{temp}°</div>
+        <div className="text-sm text-muted capitalize mt-2">{condition}</div>
       </div>
-    </div>
+
+      <dl className="grid grid-cols-2 gap-3 mt-auto">
+        {details.map((d) => (
+          <div key={d.label} className="rounded-2xl neu-inset-sm px-3 py-2.5 text-center">
+            <dt className="text-[10px] uppercase tracking-wide text-muted">{d.label}</dt>
+            <dd className="text-sm font-semibold text-ink mt-0.5">{d.value}</dd>
+          </div>
+        ))}
+      </dl>
+
+      <div className="flex justify-between gap-2 text-xs text-muted">
+        <span className="flex items-center gap-1.5">
+          <Sunrise size={15} className="text-amber-500" aria-hidden="true" /> {sunrise}
+        </span>
+        <span className="flex items-center gap-1.5">
+          <Sunset size={15} className="text-orange-400" aria-hidden="true" /> {sunset}
+        </span>
+      </div>
+    </section>
   );
 }
