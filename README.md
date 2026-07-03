@@ -14,6 +14,9 @@ Built with **Next.js (App Router) · React · TypeScript · Tailwind CSS v4**.
 - **Themed interactive map** — Leaflet with CARTO basemaps (light and dark to match the theme), centered on the selected city.
 - **Dark / light theme** — follows your OS preference by default; the toggle persists your choice, with no flash on reload.
 - **Remembers your city** — the last searched city is stored locally and restored on your next visit.
+- **Installable PWA with offline fallback** — a web manifest and a conservative service worker make ulap installable to the home screen; the last successful payload is kept locally, so going offline shows clearly-labeled saved weather instead of an error.
+- **PH-aware warnings** — UV index with WHO categories, a DOH/PAGASA-style heat-index caution, and a banner when thunderstorms or heavy rain are expected in the next 24 hours.
+- **Personal touches** — recent searches appear when the search box is focused, first-time visitors are offered their own location, and data freshness is always visible ("Updated X min ago" + manual refresh).
 - **Resilient UX** — loading skeletons, inline error banners that keep existing data on screen, and a friendly setup screen if the API key is missing.
 - **Accessible** — semantic HTML, keyboard-focus styles, ARIA labels on interactive elements and chart bars, and `prefers-reduced-motion` support.
 - **Responsive** — single-column on mobile, multi-column dashboard on desktop.
