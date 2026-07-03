@@ -8,17 +8,19 @@ interface CarouselProps {
   ariaLabel: string;
   /** Child index to bring into view on mount (e.g. the current hour). */
   scrollToIndex?: number;
+  /** Pixels reserved at the left (e.g. a sticky label column) when aligning scrolls. */
+  scrollPadding?: number;
 }
 
 const arrowClass =
-  "absolute top-1/2 -translate-y-1/2 z-10 flex items-center justify-center w-8 h-8 rounded-full bg-surface text-muted border border-edge neu-sm active:neu-inset-sm transition-shadow duration-150 cursor-pointer";
+  "flex items-center justify-center w-7 h-7 rounded-full bg-surface text-muted border border-edge neu-sm active:neu-inset-sm transition-shadow duration-150 cursor-pointer disabled:opacity-35 disabled:cursor-default";
 
 /**
- * Horizontal scroll strip with neumorphic arrow controls. The scrollbar is
- * hidden; arrows appear only on the sides that still have content and stay
- * inside the strip so they never overlap neighboring content.
+ * Horizontal scroll strip. The scrollbar is hidden; when the content
+ * overflows, a pair of controls appears above the strip — never over it —
+ * with the unavailable direction disabled.
  */
-export default function Carousel({ children, ariaLabel, scrollToIndex }: CarouselProps) {
+export default function Carousel({ children, ariaLabel, scrollToIndex, scrollPadding = 4 }: CarouselProps) {
   const trackRef = useRef<HTMLDivElement>(null);
   const [canLeft, setCanLeft] = useState(false);
   const [canRight, setCanRight] = useState(false);
@@ -49,11 +51,11 @@ export default function Carousel({ children, ariaLabel, scrollToIndex }: Carouse
       const el = trackRef.current;
       const child = el?.children[scrollToIndex] as HTMLElement | undefined;
       if (el && child) {
-        el.scrollLeft = Math.max(0, child.offsetLeft - el.offsetLeft - 4);
+        el.scrollLeft = Math.max(0, child.offsetLeft - el.offsetLeft - scrollPadding);
       }
     });
     return () => cancelAnimationFrame(raf);
-  }, [scrollToIndex]);
+  }, [scrollToIndex, scrollPadding]);
 
   const scroll = (dir: 1 | -1) => {
     const el = trackRef.current;
@@ -62,26 +64,29 @@ export default function Carousel({ children, ariaLabel, scrollToIndex }: Carouse
     el.scrollBy({ left: dir * el.clientWidth * 0.8, behavior: reduce ? "auto" : "smooth" });
   };
 
+  const scrollable = canLeft || canRight;
+
   return (
-    <div className="relative h-full">
+    <div className="h-full flex flex-col">
+      {scrollable && (
+        <div className="flex justify-end gap-1.5 pb-2">
+          <button type="button" aria-label="Scroll back" disabled={!canLeft} onClick={() => scroll(-1)} className={arrowClass}>
+            <ChevronLeft size={15} aria-hidden="true" />
+          </button>
+          <button type="button" aria-label="Scroll forward" disabled={!canRight} onClick={() => scroll(1)} className={arrowClass}>
+            <ChevronRight size={15} aria-hidden="true" />
+          </button>
+        </div>
+      )}
       <div
         ref={trackRef}
         role="list"
         aria-label={ariaLabel}
-        className="h-full flex gap-1.5 xl:gap-2 overflow-x-auto snap-x no-scrollbar p-1 -m-1 scroll-p-1"
+        className="flex-1 min-h-0 flex gap-1.5 xl:gap-2 overflow-x-auto snap-x no-scrollbar"
+        style={{ scrollPaddingLeft: scrollPadding }}
       >
         {children}
       </div>
-      {canLeft && (
-        <button type="button" aria-label="Scroll back" onClick={() => scroll(-1)} className={`${arrowClass} left-0`}>
-          <ChevronLeft size={16} aria-hidden="true" />
-        </button>
-      )}
-      {canRight && (
-        <button type="button" aria-label="Scroll forward" onClick={() => scroll(1)} className={`${arrowClass} right-0`}>
-          <ChevronRight size={16} aria-hidden="true" />
-        </button>
-      )}
     </div>
   );
 }
