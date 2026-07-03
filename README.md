@@ -36,10 +36,10 @@ cp .env.example .env.local
 `.env.local` should contain:
 
 ```
-NEXT_PUBLIC_OPENWEATHER_API_KEY=your_key_here
+OPENWEATHER_API_KEY=your_key_here
 ```
 
-> **Note:** `NEXT_PUBLIC_` variables are embedded in the client bundle, so the key is visible in the browser. That is acceptable for OpenWeatherMap's free tier in a learning project; for production you would proxy requests through a server route instead.
+> **Security:** the key never reaches the browser — all upstream calls go through the app's own `/api/weather` and `/api/geocode` route handlers, which also cache responses server-side (10 minutes for weather, 24 hours for place names) so repeat visits are fast and the free-tier quota is preserved. The legacy `NEXT_PUBLIC_OPENWEATHER_API_KEY` name still works as a fallback.
 
 ### 3. Run
 
@@ -85,7 +85,7 @@ app/
 
 ## How it works
 
-1. **Data** — `page.tsx` resolves the city via OpenWeatherMap current weather (`/weather`), then in parallel fetches the Open-Meteo forecast (real hourly temperature/rain-probability/condition plus 8 daily summaries, using the resolved coordinates), OpenWeatherMap air pollution, and the side cities.
+1. **Data** — the client calls the app's own `/api/weather` route, which resolves the city via OpenWeatherMap, then in parallel fetches the Open-Meteo forecast (real hourly temperature/rain-probability/condition plus 8 daily summaries), OpenWeatherMap air pollution, and the side cities — all cached server-side and returned as one payload. The dashboard silently revalidates every 10 minutes and when the tab regains focus, and shows an "Updated X min ago" badge with a manual refresh button.
 2. **Condition mapping** — Open-Meteo reports WMO weather codes; `wmoToIconCode()` maps them onto the OpenWeatherMap-style ids that `WeatherIcon` renders, so both sources share one icon system.
 3. **Theming** — all colors are CSS custom properties defined in `globals.css` for light and dark, mapped into Tailwind v4 via `@theme inline` so components use semantic utilities like `bg-surface` and `text-muted`. A tiny inline script in `layout.tsx` applies the saved theme before first paint.
 4. **Times** — OpenWeatherMap returns UTC timestamps plus a timezone offset; all displayed times are shifted into the *city's* local time, not the viewer's.

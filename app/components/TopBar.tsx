@@ -5,10 +5,8 @@ import { Cloud, LocateFixed, MapPin, Moon, Search, Sun } from "lucide-react";
 import { useTheme } from "../hooks/useTheme";
 import type { GeoSuggestion } from "../types/weather";
 
-const API_KEY = process.env.NEXT_PUBLIC_OPENWEATHER_API_KEY;
-const GEO_URL = "https://api.openweathermap.org/geo/1.0/direct";
-/** Suggestions are Philippines-only. */
-const COUNTRY = "PH";
+/** Server route; suggestions come back Philippines-only and deduplicated. */
+const GEO_URL = "/api/geocode";
 
 interface TopBarProps {
   city: string;
@@ -45,6 +43,7 @@ export default function TopBar({
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(-1);
   const inputRef = useRef<HTMLInputElement>(null);
+  const geoAbortRef = useRef<AbortController | null>(null);
 
   // Debounced geocoding lookup while the user types.
   // (Clearing on short input happens in the onChange handler, not here.)
@@ -55,22 +54,18 @@ export default function TopBar({
       // Only when the user is actually typing here — the page also sets
       // inputCity programmatically after a fetch resolves.
       if (document.activeElement !== inputRef.current) return;
+      geoAbortRef.current?.abort();
+      const ac = new AbortController();
+      geoAbortRef.current = ac;
       try {
-        const r = await fetch(`${GEO_URL}?q=${encodeURIComponent(q)},${COUNTRY}&limit=5&appid=${API_KEY}`);
+        const r = await fetch(`${GEO_URL}?q=${encodeURIComponent(q)}`, { signal: ac.signal });
         if (!r.ok) return;
-        const data: GeoSuggestion[] = await r.json();
-        const seen = new Set<string>();
-        const unique = data.filter((s) => {
-          const k = `${s.name}|${s.state ?? ""}|${s.country}`;
-          if (seen.has(k)) return false;
-          seen.add(k);
-          return true;
-        });
+        const unique: GeoSuggestion[] = await r.json();
         setSuggestions(unique);
         setOpen(unique.length > 0);
         setActive(-1);
       } catch {
-        // network hiccup — the plain submit path still works
+        // aborted or network hiccup — the plain submit path still works
       }
     }, 300);
     return () => clearTimeout(timer);

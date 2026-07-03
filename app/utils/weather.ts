@@ -94,6 +94,7 @@ export function toHourlyPoints(om: OpenMeteoForecast): HourlyPoint[] {
     temp: om.hourly.temperature_2m[i],
     code: wmoToIconCode(om.hourly.weather_code[i]),
     pop: om.hourly.precipitation_probability[i] ?? 0,
+    uv: om.hourly.uv_index?.[i] ?? undefined,
   }));
 }
 
