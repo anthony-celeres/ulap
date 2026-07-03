@@ -40,7 +40,7 @@ export default function AirQualityCard({ air, dayName }: { air: AirQuality | nul
         </span>
         <div>
           <div className="text-base font-semibold text-ink">{describeAqi(air.aqi)}</div>
-          <div className="text-[11px] text-muted">Air Quality Index (1–5)</div>
+          <div className="text-xs text-muted">Air Quality Index (1–5)</div>
         </div>
       </div>
 
@@ -49,7 +49,7 @@ export default function AirQualityCard({ air, dayName }: { air: AirQuality | nul
           const value = air.components[key];
           const pct = Math.min((value / scale) * 100, 100);
           return (
-            <div key={key} className="grid grid-cols-[46px_1fr_52px] items-center gap-3 text-[11px]">
+            <div key={key} className="grid grid-cols-[46px_1fr_52px] items-center gap-3 text-xs">
               <dt className="text-muted font-medium">{label}</dt>
               <dd className="h-2.5 rounded-full neu-inset-sm overflow-hidden">
                 <div className="h-full rounded-full" style={{ width: `${pct}%`, background: color }}></div>
@@ -59,7 +59,7 @@ export default function AirQualityCard({ air, dayName }: { air: AirQuality | nul
           );
         })}
       </dl>
-      <p className="text-[10px] text-muted mt-auto pt-3">Pollutant concentrations in µg/m³.</p>
+      <p className="text-xs text-muted mt-auto pt-3">Pollutant concentrations in µg/m³.</p>
     </section>
   );
 }
