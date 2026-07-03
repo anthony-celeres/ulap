@@ -15,8 +15,9 @@ import type {
   CitySummary,
   CurrentWeather,
   DailyForecast,
-  ForecastResponse,
   GeoSuggestion,
+  HourlyPoint,
+  OpenMeteoForecast,
 } from "./types/weather";
 import Carousel from "./components/Carousel";
 import {
@@ -24,13 +25,14 @@ import {
   fmtTime,
   getDayName,
   getShortDay,
-  groupForecastByDay,
-  interpolateHourly,
   msToKmh,
+  toDailyForecast,
+  toHourlyPoints,
 } from "./utils/weather";
 
 const API_KEY = process.env.NEXT_PUBLIC_OPENWEATHER_API_KEY;
 const BASE_URL = "https://api.openweathermap.org/data/2.5";
+const OM_URL = "https://api.open-meteo.com/v1/forecast";
 const DEFAULT_CITY = "Manila";
 const LAST_CITY_KEY = "ulap-last-city";
 /** The app is Philippines-only: every name-based lookup is country-filtered. */
@@ -56,6 +58,7 @@ export default function Home() {
   const [inputCity, setInputCity] = useState("");
   const [current, setCurrent] = useState<CurrentWeather | null>(null);
   const [days, setDays] = useState<DailyForecast[]>([]);
+  const [hourlyAll, setHourlyAll] = useState<HourlyPoint[]>([]);
   const [air, setAir] = useState<AirQuality | null>(null);
   const [otherCities, setOtherCities] = useState<CitySummary[]>([]);
   const [selectedDay, setSelectedDay] = useState(0);
@@ -89,7 +92,13 @@ export default function Home() {
       }
 
       const [forRes, airRes, others] = await Promise.all([
-        fetch(`${BASE_URL}/forecast?${queryString(query)}&units=metric&appid=${API_KEY}`),
+        // Hourly + daily forecast from Open-Meteo: real per-hour data and a
+        // full week of days (the OWM free forecast stops at ~5 days).
+        fetch(
+          `${OM_URL}?latitude=${cur.coord.lat}&longitude=${cur.coord.lon}` +
+            `&hourly=temperature_2m,precipitation_probability,weather_code` +
+            `&daily=weather_code,temperature_2m_max,temperature_2m_min&forecast_days=8&timezone=auto`
+        ),
         fetch(`${BASE_URL}/air_pollution?lat=${cur.coord.lat}&lon=${cur.coord.lon}&appid=${API_KEY}`),
         Promise.all(
           FIXED_CITIES.map(async (f): Promise<CitySummary | null> => {
@@ -110,9 +119,11 @@ export default function Home() {
       ]);
 
       if (forRes.ok) {
-        const forecast: ForecastResponse = await forRes.json();
-        setDays(groupForecastByDay(forecast.list, forecast.city.timezone));
+        const om: OpenMeteoForecast = await forRes.json();
+        setHourlyAll(toHourlyPoints(om));
+        setDays(toDailyForecast(om));
       } else {
+        setHourlyAll([]);
         setDays([]);
       }
 
@@ -172,18 +183,14 @@ export default function Home() {
 
   const tz = current?.timezone ?? 0;
   const selected = days[selectedDay];
-  // Roll today into the following days' slots so hourly views always cover
-  // 24h (late in the evening only one or two of today's slots remain).
-  // 9 slots = 8 three-hour intervals = 24 interpolated hours.
-  const upcoming = [...(days[0]?.slots ?? []), ...(days[1]?.slots ?? []), ...(days[2]?.slots ?? [])];
-  const hourly = interpolateHourly(upcoming.slice(0, 9));
-  const rainSlots = selectedDay === 0 ? upcoming.slice(0, 8) : (selected?.slots ?? []).slice(0, 8);
-  const rainData = rainSlots.map((s) => ({
-    label: fmtHour(s.dt, tz),
-    pop: Math.round(s.pop * 100),
-  }));
+  // Open-Meteo hours are calendar-aligned: 24 entries per local day.
+  const todayHours = hourlyAll.slice(0, 24);
+  const rainData = hourlyAll
+    .slice(selectedDay * 24, selectedDay * 24 + 24)
+    .filter((_, i) => i % 3 === 0)
+    .map((h) => ({ label: fmtHour(h.dt, 0), pop: Math.round(h.pop) }));
   const selectedDayName =
-    selectedDay === 0 ? "next 24h" : selectedDay === 1 ? "Tomorrow" : selected ? getDayName(selected.dt, tz) : "";
+    selectedDay === 0 ? "Today" : selectedDay === 1 ? "Tomorrow" : selected ? getDayName(selected.dt, 0) : "";
 
   const dayTabClass = (active: boolean) =>
     `px-4 py-1.5 rounded-full text-sm cursor-pointer transition-shadow duration-150 ${
@@ -288,15 +295,17 @@ export default function Home() {
               />
             </div>
 
-            <div className="lg:col-span-8 xl:col-span-6">
+            {/* The forecast strip gets the full remaining width; the
+                rain/air panel lives on the second row beside the map. */}
+            <div className="lg:col-span-8 xl:col-span-9">
               {view === "today" ? (
-                <HourlyStrip hours={hourly} tz={tz} />
+                <HourlyStrip hours={todayHours} nowDt={current.dt + tz} />
               ) : (
-                <Carousel ariaLabel="Daily forecast">
-                  {days.map((d, i) => (
-                    <div key={d.key} role="listitem" className="w-[136px] shrink-0 snap-start">
+                <Carousel ariaLabel="Daily forecast for the next 6 days">
+                  {days.slice(0, 7).map((d, i) => (
+                    <div key={d.key} role="listitem" className="w-[136px] shrink-0 snap-start h-full">
                       <ForecastCard
-                        dayName={i === 0 ? "Today" : getShortDay(d.dt, tz)}
+                        dayName={i === 0 ? "Today" : getShortDay(d.dt, 0)}
                         code={d.code}
                         condition={d.condition}
                         min={d.min}
@@ -310,7 +319,7 @@ export default function Home() {
               )}
             </div>
 
-            <div className="lg:col-span-12 xl:col-span-3">
+            <div className="lg:col-span-4 xl:col-span-3">
               {panel === "rain" ? (
                 <RainChart dayName={selectedDayName} data={rainData} />
               ) : (
@@ -318,10 +327,10 @@ export default function Home() {
               )}
             </div>
 
-            <div className="lg:col-span-8 xl:col-span-9">
+            <div className="lg:col-span-8 xl:col-span-6">
               <MapSection city={city} lat={current.coord.lat} lon={current.coord.lon} />
             </div>
-            <div className="lg:col-span-4 xl:col-span-3">
+            <div className="lg:col-span-12 xl:col-span-3">
               <CitiesList cities={otherCities} onSelect={handleSearch} />
             </div>
           </div>
@@ -335,14 +344,14 @@ function DashboardSkeleton() {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 xl:gap-6" aria-hidden="true">
       <div className="lg:col-span-4 xl:col-span-3 h-[360px] rounded-3xl bg-well neu-inset-sm animate-pulse" />
-      <div className="lg:col-span-8 xl:col-span-6 grid grid-cols-[repeat(auto-fit,minmax(110px,1fr))] gap-4">
-        {Array.from({ length: 5 }, (_, i) => (
+      <div className="lg:col-span-8 xl:col-span-9 grid grid-cols-[repeat(auto-fit,minmax(88px,1fr))] gap-4">
+        {Array.from({ length: 8 }, (_, i) => (
           <div key={i} className="h-[360px] lg:h-full rounded-3xl bg-well neu-inset-sm animate-pulse" />
         ))}
       </div>
-      <div className="lg:col-span-12 xl:col-span-3 h-[360px] rounded-3xl bg-well neu-inset-sm animate-pulse" />
-      <div className="lg:col-span-8 xl:col-span-9 h-[320px] rounded-3xl bg-well neu-inset-sm animate-pulse" />
       <div className="lg:col-span-4 xl:col-span-3 h-[320px] rounded-3xl bg-well neu-inset-sm animate-pulse" />
+      <div className="lg:col-span-8 xl:col-span-6 h-[320px] rounded-3xl bg-well neu-inset-sm animate-pulse" />
+      <div className="lg:col-span-12 xl:col-span-3 h-[320px] rounded-3xl bg-well neu-inset-sm animate-pulse" />
     </div>
   );
 }

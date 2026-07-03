@@ -13,7 +13,7 @@ export default function CitiesList({ cities, onSelect }: CitiesListProps) {
     <section aria-label="Around the Philippines" className="h-full flex flex-col">
       <h3 className="text-sm font-semibold text-ink mb-4">Around the Philippines</h3>
 
-      <div className="flex-1 grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-1 gap-4">
+      <div className="flex-1 grid grid-cols-1 sm:grid-cols-3 xl:grid-cols-1 gap-4">
         {cities.map((city) => (
           <button
             key={city.name}

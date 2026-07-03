@@ -7,7 +7,7 @@ Built with **Next.js (App Router) · React · TypeScript · Tailwind CSS v4**.
 ## Features
 
 - **Live current conditions** — temperature, real feel, wind, pressure, humidity, sunrise/sunset, all shown in the searched city's local time.
-- **Hourly today + 6-day forecast** — a Google Weather-style toggle: *Today* shows all 24 upcoming hours (temperatures interpolated between the API's 3-hour slots; condition and rain chance from the nearest real slot); *Next 6 days* shows every forecast day as a card with real aggregated high/low temperatures. Both strips scroll horizontally with neumorphic arrow buttons (and swipe/trackpad), so nothing is cut off at any screen size.
+- **Hourly today + 6-day forecast** — a Google Weather-style toggle backed by real per-hour data from Open-Meteo: *Today* shows all 24 hours of the local day in two clock-aligned rows (12 AM–11 AM over 12 PM–11 PM), with the current hour highlighted; *Next 6 days* shows a full week of day cards with real high/low temperatures. Both strips scroll horizontally with neumorphic arrow buttons (and swipe/trackpad) — no visible scrollbar, nothing cut off at any screen size.
 - **Hourly rain chart** — real probability-of-precipitation data. In the 6-day view, click any day card to see that day's hourly rain chances.
 - **Air quality** — toggle the chart panel to see the Air Quality Index (1–5) and PM2.5 / PM10 / O₃ / NO₂ concentrations.
 - **City search with autocomplete + geolocation** — type a few letters and pick from live, Philippines-only location suggestions with their province (OpenWeatherMap Geocoding API, with keyboard navigation); weather then loads by exact coordinates. Or use the locate button for where you are.
@@ -85,8 +85,8 @@ app/
 
 ## How it works
 
-1. **Data** — `page.tsx` fetches three OpenWeatherMap endpoints: current weather (`/weather`), the 5-day / 3-hour forecast (`/forecast`), and air pollution (`/air_pollution`, using the coordinates returned by the first call). The forecast and side-city requests run in parallel.
-2. **Daily aggregation** — `groupForecastByDay()` buckets the 3-hourly slots by the city's local date, takes the true min/max across each day, and uses the slot closest to midday for the day's icon.
+1. **Data** — `page.tsx` resolves the city via OpenWeatherMap current weather (`/weather`), then in parallel fetches the Open-Meteo forecast (real hourly temperature/rain-probability/condition plus 8 daily summaries, using the resolved coordinates), OpenWeatherMap air pollution, and the side cities.
+2. **Condition mapping** — Open-Meteo reports WMO weather codes; `wmoToIconCode()` maps them onto the OpenWeatherMap-style ids that `WeatherIcon` renders, so both sources share one icon system.
 3. **Theming** — all colors are CSS custom properties defined in `globals.css` for light and dark, mapped into Tailwind v4 via `@theme inline` so components use semantic utilities like `bg-surface` and `text-muted`. A tiny inline script in `layout.tsx` applies the saved theme before first paint.
 4. **Times** — OpenWeatherMap returns UTC timestamps plus a timezone offset; all displayed times are shifted into the *city's* local time, not the viewer's.
 
@@ -120,7 +120,8 @@ The `commit-msg` hook enforces `type(scope): subject` conventional messages and 
 
 ## Credits
 
-- Weather, forecast, air-quality, and geocoding data: [OpenWeatherMap](https://openweathermap.org/)
+- Current conditions, air-quality, and geocoding data: [OpenWeatherMap](https://openweathermap.org/)
+- Hourly and daily forecast data: [Open-Meteo](https://open-meteo.com/) (CC BY 4.0, no API key)
 - Icons: [Lucide](https://lucide.dev/) (`lucide-react`)
 - Map: [Leaflet](https://leafletjs.com/) with © [OpenStreetMap](https://www.openstreetmap.org/copyright) © [CARTO](https://carto.com/attributions) basemaps
 - Fonts: [Geist](https://vercel.com/font) via `next/font`

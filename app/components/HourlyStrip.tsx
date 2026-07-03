@@ -7,35 +7,52 @@ import Carousel from "./Carousel";
 import WeatherIcon from "./WeatherIcon";
 
 interface HourlyStripProps {
-  /** 24 hourly points (interpolated from the 3-hourly forecast). */
+  /** Today's 24 hours, midnight to 11 PM. */
   hours: HourlyPoint[];
-  /** City timezone offset in seconds. */
-  tz: number;
+  /** Marks the current hour's tile. */
+  nowDt?: number;
 }
 
-export default function HourlyStrip({ hours, tz }: HourlyStripProps) {
-  if (hours.length === 0) {
+function HourTile({ point, now }: { point: HourlyPoint; now: boolean }) {
+  return (
+    <div
+      role="listitem"
+      className={`flex-1 w-[88px] flex flex-col items-center justify-center gap-1.5 p-2 rounded-3xl ${
+        now ? "neu-inset" : "neu-sm"
+      }`}
+      title={`${fmtHour(point.dt, 0)}: ${Math.round(point.temp)}°, ${Math.round(point.pop)}% rain`}
+    >
+      <div className={`text-[11px] font-semibold whitespace-nowrap ${now ? "text-accent" : "text-muted"}`}>
+        {fmtHour(point.dt, 0)}
+      </div>
+      <WeatherIcon code={point.code} size={26} />
+      <div className="text-base font-bold text-ink leading-none">{Math.round(point.temp)}°</div>
+      <div className="flex items-center gap-1 text-[10px] font-medium text-accent2">
+        <Droplets size={10} aria-hidden="true" />
+        {Math.round(point.pop)}%
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Today's hours in two clock-aligned rows: 12 AM–11 AM on top,
+ * 12 PM–11 PM below, scrolling together column by column.
+ */
+export default function HourlyStrip({ hours, nowDt }: HourlyStripProps) {
+  if (hours.length < 24) {
     return <p className="text-xs text-muted flex items-center h-full">No hourly data available.</p>;
   }
 
+  const isNow = (p: HourlyPoint) =>
+    nowDt !== undefined && nowDt >= p.dt && nowDt < p.dt + 3600;
+
   return (
-    <Carousel ariaLabel="Hourly forecast for the next 24 hours">
-      {hours.map((h) => (
-        <div
-          key={h.dt}
-          role="listitem"
-          className="w-[84px] shrink-0 snap-start flex flex-col items-center justify-between gap-2 p-3 py-4 rounded-3xl neu-sm"
-          title={`${fmtHour(h.dt, tz)}: ${Math.round(h.temp)}°, ${Math.round(h.pop * 100)}% rain`}
-        >
-          <div className="text-xs font-semibold text-muted whitespace-nowrap">{fmtHour(h.dt, tz)}</div>
-          <div className="flex flex-col items-center gap-1.5">
-            <WeatherIcon code={h.code} size={30} />
-            <div className="text-lg font-bold text-ink">{Math.round(h.temp)}°</div>
-          </div>
-          <div className="flex items-center gap-1 text-[11px] font-medium text-accent2">
-            <Droplets size={11} aria-hidden="true" />
-            {Math.round(h.pop * 100)}%
-          </div>
+    <Carousel ariaLabel="Today's hourly forecast, midnight to 11 PM">
+      {Array.from({ length: 12 }, (_, i) => (
+        <div key={hours[i].dt} className="shrink-0 snap-start h-full flex flex-col gap-3 xl:gap-4">
+          <HourTile point={hours[i]} now={isNow(hours[i])} />
+          <HourTile point={hours[i + 12]} now={isNow(hours[i + 12])} />
         </div>
       ))}
     </Carousel>
