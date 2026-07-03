@@ -1,12 +1,24 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Cloud, LocateFixed, MapPin, Moon, Search, Sun } from "lucide-react";
+import { Clock, Cloud, LocateFixed, MapPin, Moon, Search, Sun } from "lucide-react";
 import { useTheme } from "../hooks/useTheme";
 import type { GeoSuggestion } from "../types/weather";
 
 /** Server route; suggestions come back Philippines-only and deduplicated. */
 const GEO_URL = "/api/geocode";
+const RECENTS_KEY = "ulap-recents";
+
+function loadRecents(): GeoSuggestion[] {
+  try {
+    const raw = localStorage.getItem(RECENTS_KEY);
+    if (!raw) return [];
+    const list: { name: string; lat: number; lon: number }[] = JSON.parse(raw);
+    return list.map((r) => ({ name: r.name, country: "PH", lat: r.lat, lon: r.lon }));
+  } catch {
+    return [];
+  }
+}
 
 interface TopBarProps {
   city: string;
@@ -40,6 +52,7 @@ export default function TopBar({
 }: TopBarProps) {
   const { theme, toggleTheme } = useTheme();
   const [suggestions, setSuggestions] = useState<GeoSuggestion[]>([]);
+  const [recents, setRecents] = useState<GeoSuggestion[]>([]);
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(-1);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -71,6 +84,10 @@ export default function TopBar({
     return () => clearTimeout(timer);
   }, [inputCity]);
 
+  // With fewer than 2 characters typed, the dropdown offers recent searches.
+  const showingRecents = inputCity.trim().length < 2;
+  const items = showingRecents ? recents : suggestions;
+
   const choose = (s: GeoSuggestion) => {
     setOpen(false);
     setSuggestions([]);
@@ -81,15 +98,15 @@ export default function TopBar({
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "ArrowDown" || e.key === "ArrowUp") {
-      if (suggestions.length === 0) return;
+      if (items.length === 0) return;
       e.preventDefault();
       setOpen(true);
       const dir = e.key === "ArrowDown" ? 1 : -1;
-      setActive((prev) => (prev + dir + suggestions.length) % suggestions.length);
+      setActive((prev) => (prev + dir + items.length) % items.length);
     } else if (e.key === "Enter") {
-      if (open && active >= 0) {
+      if (open && active >= 0 && items[active]) {
         e.preventDefault();
-        choose(suggestions[active]);
+        choose(items[active]);
       }
       // otherwise the form submits → plain name search
     } else if (e.key === "Escape") {
@@ -143,11 +160,15 @@ export default function TopBar({
             onCityInput(e.target.value);
             if (e.target.value.trim().length < 2) {
               setSuggestions([]);
-              setOpen(false);
+              setActive(-1);
             }
           }}
           onKeyDown={handleKeyDown}
-          onFocus={() => suggestions.length > 0 && setOpen(true)}
+          onFocus={() => {
+            setRecents(loadRecents());
+            setOpen(true);
+            setActive(-1);
+          }}
           onBlur={() => setTimeout(() => setOpen(false), 150)}
         />
         <button
@@ -158,14 +179,19 @@ export default function TopBar({
           {loading ? "Loading…" : "Search"}
         </button>
 
-        {open && (
+        {open && items.length > 0 && (
           <ul
             id="city-suggestions"
             role="listbox"
-            aria-label="City suggestions"
+            aria-label={showingRecents ? "Recent searches" : "City suggestions"}
             className="absolute left-0 right-0 top-full mt-3 z-50 rounded-3xl border border-edge neu bg-app p-2"
           >
-            {suggestions.map((s, i) => (
+            {showingRecents && (
+              <li aria-hidden="true" className="px-4 pt-1.5 pb-1 text-xs uppercase tracking-wide text-muted">
+                Recent
+              </li>
+            )}
+            {items.map((s, i) => (
               <li key={`${s.name}-${s.lat}-${s.lon}`} role="option" aria-selected={i === active} id={`city-option-${i}`}>
                 <button
                   type="button"
@@ -179,9 +205,13 @@ export default function TopBar({
                     i === active ? "neu-inset-sm" : ""
                   }`}
                 >
-                  <MapPin size={14} className="text-accent shrink-0" aria-hidden="true" />
+                  {showingRecents ? (
+                    <Clock size={14} className="text-muted shrink-0" aria-hidden="true" />
+                  ) : (
+                    <MapPin size={14} className="text-accent shrink-0" aria-hidden="true" />
+                  )}
                   <span className="text-sm font-medium text-ink">{s.name}</span>
-                  <span className="text-xs text-muted truncate">{suggestionLabel(s)}</span>
+                  {!showingRecents && <span className="text-xs text-muted truncate">{suggestionLabel(s)}</span>}
                 </button>
               </li>
             ))}
