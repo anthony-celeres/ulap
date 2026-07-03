@@ -39,6 +39,7 @@ function queryToParams(q: Query) {
 
 export default function Home() {
   const [city, setCity] = useState("");
+  const [cityDetail, setCityDetail] = useState<string | null>(null);
   const [inputCity, setInputCity] = useState("");
   const [current, setCurrent] = useState<CurrentWeather | null>(null);
   const [days, setDays] = useState<DailyForecast[]>([]);
@@ -59,8 +60,11 @@ export default function Home() {
   const abortRef = useRef<AbortController | null>(null);
   const updatedAtRef = useRef(0);
   const hasDataRef = useRef(false);
+  // Current display name/address, readable inside silent refreshes.
+  const cityRef = useRef("");
+  const detailRef = useRef<string | null>(null);
 
-  const fetchWeatherData = useCallback(async (query: Query, opts?: { silent?: boolean; label?: string }) => {
+  const fetchWeatherData = useCallback(async (query: Query, opts?: { silent?: boolean; label?: string; detail?: string }) => {
     // A newer request supersedes any in-flight one.
     abortRef.current?.abort();
     const ac = new AbortController();
@@ -82,15 +86,22 @@ export default function Home() {
         );
       }
       const payload: WeatherPayload = await res.json();
-      // A geocoded pick (e.g. a barangay) keeps its own name on display —
-      // the weather API would otherwise rename it to the nearest station.
-      const displayName = opts?.label ?? payload.current.name;
+      // A geocoded pick (e.g. a barangay) keeps its own name and address on
+      // display — the weather API would otherwise rename it to the nearest
+      // station. Silent refreshes keep whatever is already shown.
+      const renaming = !opts?.silent || !!opts?.label;
+      if (renaming) {
+        cityRef.current = opts?.label ?? payload.current.name;
+        detailRef.current = opts?.detail ?? null;
+      }
+      const displayName = cityRef.current || payload.current.name;
       setCurrent(payload.current);
       setHourlyAll(payload.hourly);
       setDays(payload.days);
       setAir(payload.air);
       setOtherCities(payload.cities);
       setCity(displayName);
+      setCityDetail(detailRef.current);
       setInputCity(displayName);
       if (!opts?.silent) setSelectedDay(0);
       hasDataRef.current = true;
@@ -101,14 +112,24 @@ export default function Home() {
       try {
         localStorage.setItem(LAST_CITY_KEY, displayName);
         // Keep a last-known copy so the app still shows weather offline.
-        localStorage.setItem(PAYLOAD_KEY, JSON.stringify({ payload, at: Date.now() }));
-        const raw = localStorage.getItem(RECENTS_KEY);
-        const list: { name: string; lat: number; lon: number }[] = raw ? JSON.parse(raw) : [];
-        const next = [
-          { name: displayName, lat: payload.current.coord.lat, lon: payload.current.coord.lon },
-          ...list.filter((r) => r.name !== displayName),
-        ].slice(0, 5);
-        localStorage.setItem(RECENTS_KEY, JSON.stringify(next));
+        localStorage.setItem(
+          PAYLOAD_KEY,
+          JSON.stringify({ payload, at: Date.now(), label: displayName, detail: detailRef.current })
+        );
+        if (renaming) {
+          const raw = localStorage.getItem(RECENTS_KEY);
+          const list: { name: string; state?: string; lat: number; lon: number }[] = raw ? JSON.parse(raw) : [];
+          const next = [
+            {
+              name: displayName,
+              state: detailRef.current ?? undefined,
+              lat: payload.current.coord.lat,
+              lon: payload.current.coord.lon,
+            },
+            ...list.filter((r) => r.name !== displayName),
+          ].slice(0, 5);
+          localStorage.setItem(RECENTS_KEY, JSON.stringify(next));
+        }
       } catch {
         // storage unavailable — skip persistence
       }
@@ -119,14 +140,22 @@ export default function Home() {
         try {
           const raw = localStorage.getItem(PAYLOAD_KEY);
           if (raw) {
-            const { payload, at }: { payload: WeatherPayload; at: number } = JSON.parse(raw);
+            const {
+              payload,
+              at,
+              label,
+              detail,
+            }: { payload: WeatherPayload; at: number; label?: string; detail?: string | null } = JSON.parse(raw);
             setCurrent(payload.current);
             setHourlyAll(payload.hourly);
             setDays(payload.days);
             setAir(payload.air);
             setOtherCities(payload.cities);
-            setCity(payload.current.name);
-            setInputCity(payload.current.name);
+            cityRef.current = label ?? payload.current.name;
+            detailRef.current = detail ?? null;
+            setCity(cityRef.current);
+            setCityDetail(detailRef.current);
+            setInputCity(cityRef.current);
             hasDataRef.current = true;
             setStaleLabel(new Date(at).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }));
             setAnnouncement(`Offline — showing saved weather for ${payload.current.name}`);
@@ -141,22 +170,6 @@ export default function Home() {
       if (abortRef.current === ac) setLoading(false);
     }
   }, []);
-
-  useEffect(() => {
-    let saved: string | null = null;
-    let geoAsked = true;
-    try {
-      saved = localStorage.getItem(LAST_CITY_KEY);
-      geoAsked = localStorage.getItem(GEO_ASKED_KEY) !== null;
-    } catch {
-      // storage unavailable — fall back to the default city
-    }
-    if (!saved && !geoAsked) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time first-visit setup on mount
-      setAskGeo(true);
-    }
-    fetchWeatherData(saved || DEFAULT_CITY);
-  }, [fetchWeatherData]);
 
   const dismissGeo = useCallback(() => {
     setAskGeo(false);
@@ -196,7 +209,7 @@ export default function Home() {
         if (r.ok) {
           const list: GeoSuggestion[] = await r.json();
           if (list.length > 0) {
-            fetchWeatherData({ lat: list[0].lat, lon: list[0].lon }, { label: list[0].name });
+            fetchWeatherData({ lat: list[0].lat, lon: list[0].lon }, { label: list[0].name, detail: list[0].state });
             return;
           }
         }
@@ -210,10 +223,28 @@ export default function Home() {
 
   const handleSelectLocation = useCallback(
     (place: GeoSuggestion) => {
-      fetchWeatherData({ lat: place.lat, lon: place.lon }, { label: place.name });
+      fetchWeatherData({ lat: place.lat, lon: place.lon }, { label: place.name, detail: place.state });
     },
     [fetchWeatherData]
   );
+
+  // Initial load goes through the geocoder too, so the saved or default
+  // city comes back with its full address.
+  useEffect(() => {
+    let saved: string | null = null;
+    let geoAsked = true;
+    try {
+      saved = localStorage.getItem(LAST_CITY_KEY);
+      geoAsked = localStorage.getItem(GEO_ASKED_KEY) !== null;
+    } catch {
+      // storage unavailable — fall back to the default city
+    }
+    if (!saved && !geoAsked) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time first-visit setup on mount
+      setAskGeo(true);
+    }
+    handleSearch(saved || DEFAULT_CITY);
+  }, [handleSearch]);
 
   const handleLocate = useCallback(() => {
     if (!navigator.geolocation) {
@@ -266,8 +297,6 @@ export default function Home() {
         {announcement}
       </p>
       <TopBar
-        city={current ? city : "—"}
-        country={current?.sys.country}
         inputCity={inputCity}
         loading={loading}
         updatedAt={updatedAt}
@@ -361,6 +390,8 @@ export default function Home() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 xl:gap-6">
             <div className="lg:col-span-4 xl:col-span-3">
               <TodayCard
+                location={city}
+                locationDetail={cityDetail ?? undefined}
                 day={getDayName(current.dt, tz)}
                 time={fmtTime(current.dt, tz)}
                 code={current.weather[0].id}
