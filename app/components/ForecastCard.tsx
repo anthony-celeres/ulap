@@ -19,7 +19,7 @@ export default function ForecastCard({ dayName, code, condition, min, max, selec
       onClick={onSelect}
       aria-pressed={selected}
       title={`${dayName}: ${condition}, high ${max}°, low ${min}°`}
-      className={`flex flex-col items-center justify-between gap-3 p-4 py-5 rounded-3xl cursor-pointer transition-shadow duration-150 ${
+      className={`w-full h-full flex flex-col items-center justify-between gap-3 p-4 py-5 rounded-3xl cursor-pointer transition-shadow duration-150 ${
         selected ? "neu-inset" : "neu-sm"
       }`}
     >
