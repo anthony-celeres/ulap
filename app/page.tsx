@@ -185,9 +185,28 @@ export default function Home() {
     };
   }, [current, fetchWeatherData]);
 
-  const handleSearch = (newCity: string) => {
-    if (newCity.trim()) fetchWeatherData(newCity.trim());
-  };
+  const handleSearch = useCallback(
+    async (newCity: string) => {
+      const q = newCity.trim();
+      if (!q) return;
+      // Resolve through the geocoder first so barangay-level names work;
+      // the plain name lookup remains as a fallback.
+      try {
+        const r = await fetch(`/api/geocode?q=${encodeURIComponent(q)}`);
+        if (r.ok) {
+          const list: GeoSuggestion[] = await r.json();
+          if (list.length > 0) {
+            fetchWeatherData({ lat: list[0].lat, lon: list[0].lon }, { label: list[0].name });
+            return;
+          }
+        }
+      } catch {
+        // geocoder unreachable — fall through to the name lookup
+      }
+      fetchWeatherData(q);
+    },
+    [fetchWeatherData]
+  );
 
   const handleSelectLocation = useCallback(
     (place: GeoSuggestion) => {
