@@ -13,24 +13,16 @@ const POLLUTANTS: { key: keyof AirQuality["components"]; label: string; scale: n
   { key: "no2", label: "NO₂", scale: 200 },
 ];
 
-export default function AirQualityCard({ air, dayName }: { air: AirQuality | null; dayName: string }) {
+/** Card body only — ChartPanel provides the card, title, and controls. */
+export default function AirQualityCard({ air }: { air: AirQuality | null }) {
   if (!air) {
-    return (
-      <section aria-label="Air quality" className="h-full flex flex-col p-6 rounded-3xl neu">
-        <div className="text-sm font-semibold text-ink mb-4">Air quality</div>
-        <p className="text-xs text-muted flex-1 flex items-center">Air quality data is unavailable.</p>
-      </section>
-    );
+    return <p className="text-xs text-muted flex-1 flex items-center">Air quality data is unavailable.</p>;
   }
 
   const color = AQI_COLORS[air.aqi - 1] ?? AQI_COLORS[2];
 
   return (
-    <section aria-label={`Air quality: ${describeAqi(air.aqi)}`} className="h-full flex flex-col p-6 rounded-3xl neu">
-      <div className="text-sm font-semibold text-ink mb-4">
-        Air quality <span className="text-muted font-medium">· {dayName}</span>
-      </div>
-
+    <div className="flex-1 flex flex-col" aria-label={`Air quality: ${describeAqi(air.aqi)}`}>
       <div className="flex items-center gap-4 mb-5">
         <span
           className="inline-flex items-center justify-center w-12 h-12 rounded-full text-white text-base font-bold neu-sm"
@@ -60,6 +52,6 @@ export default function AirQualityCard({ air, dayName }: { air: AirQuality | nul
         })}
       </dl>
       <p className="text-xs text-muted mt-auto pt-3">Pollutant concentrations in µg/m³.</p>
-    </section>
+    </div>
   );
 }
