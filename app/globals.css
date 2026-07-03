@@ -74,12 +74,16 @@
   background-image: var(--hero-grad);
 }
 
-/* Scroll strips rely on arrow buttons; the native scrollbar would break the soft-UI look. */
-@utility no-scrollbar {
-  scrollbar-width: none;
-  &::-webkit-scrollbar {
-    display: none;
-  }
+/* Scroll strips rely on arrow buttons; the native scrollbar would break the
+   soft-UI look. Plain selectors so every browser engine is covered. */
+.no-scrollbar {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* legacy Edge */
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none; /* WebKit */
+  width: 0;
+  height: 0;
 }
 
 @utility text-gradient {
