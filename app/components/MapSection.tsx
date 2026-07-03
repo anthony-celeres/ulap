@@ -1,34 +1,39 @@
 "use client";
 
-export default function MapSection({ city }: { city: string }) {
-  const mapSrc = `https://maps.google.com/maps?q=${encodeURIComponent(city)}&t=&z=13&ie=UTF8&iwloc=&output=embed`;
+import dynamic from "next/dynamic";
+import { ExternalLink } from "lucide-react";
+
+// Leaflet touches `window` at import time, so load it client-side only.
+const LeafletMap = dynamic(() => import("./LeafletMap"), {
+  ssr: false,
+  loading: () => <div className="absolute inset-0 bg-well animate-pulse" aria-hidden="true" />,
+});
+
+interface MapSectionProps {
+  city: string;
+  lat: number;
+  lon: number;
+}
+
+export default function MapSection({ city, lat, lon }: MapSectionProps) {
+  const mapLink = `https://www.google.com/maps/search/?api=1&query=${lat},${lon}`;
 
   return (
-    <div className="p-[18px] bg-white border border-[#e2e8f0] rounded-2xl min-h-[260px] map-section">
-      <div className="flex items-center justify-between mb-4 map-header">
-        <h3 className="text-sm font-semibold">Global map</h3>
-        <div className="flex items-center gap-1.5 bg-white border border-[#e2e8f0] rounded-lg py-1 px-3 text-xs text-[#64748b] cursor-pointer view-wide-btn">View wide ✨</div>
+    <section aria-label={`Map of ${city}`} className="h-full flex flex-col p-6 rounded-3xl neu">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-sm font-semibold text-ink">Map</h3>
+        <a
+          href={mapLink}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-1.5 rounded-full neu-sm active:neu-inset-sm py-1.5 px-4 text-xs text-muted transition-shadow duration-150"
+        >
+          Open in Google Maps <ExternalLink size={12} aria-hidden="true" />
+        </a>
       </div>
-      <div className="relative h-[200px] bg-[#f1f5f9] rounded-xl overflow-hidden map-body">
-        <iframe
-          width="100%"
-          height="100%"
-          frameBorder="0"
-          style={{ border: 0, borderRadius: '12px' }}
-          src={mapSrc}
-          allowFullScreen
-          title={`Google Map of ${city}`}
-        ></iframe>
-
-        <div className="absolute bottom-3.5 left-3.5 bg-white border border-[#e2e8f0] shadow-sm rounded-xl p-3 w-[165px] text-[#111] map-popup pointer-events-none opacity-90">
-          <p className="text-[11px] font-medium leading-relaxed mb-2.5">Explore global map of wind, weather and oceans condition.</p>
-          <button className="bg-[#7c3aed] text-white border-none rounded-lg p-1.5 text-[11px] font-semibold cursor-pointer w-full pointer-events-auto">Get started</button>
-        </div>
-
-        <div className="absolute bottom-3.5 right-12 text-[11px] text-[#c4b5fd] pointer-events-none">
-          📍 <span>{city}</span>
-        </div>
+      <div className="relative isolate flex-1 min-h-[260px] xl:min-h-[320px] rounded-2xl neu-inset-sm overflow-hidden">
+        <LeafletMap lat={lat} lon={lon} city={city} />
       </div>
-    </div>
+    </section>
   );
 }
