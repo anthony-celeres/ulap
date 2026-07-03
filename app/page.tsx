@@ -5,6 +5,7 @@ import { Cloud, TriangleAlert, X } from "lucide-react";
 import TopBar from "./components/TopBar";
 import TodayCard from "./components/TodayCard";
 import ForecastCard from "./components/ForecastCard";
+import HourlyStrip from "./components/HourlyStrip";
 import RainChart from "./components/RainChart";
 import AirQualityCard from "./components/AirQualityCard";
 import MapSection from "./components/MapSection";
@@ -41,6 +42,8 @@ const FIXED_CITIES = [
 
 type Query = string | { lat: number; lon: number };
 type Panel = "rain" | "air";
+/** Google Weather-style views: hourly today, or the next days at a glance. */
+type View = "today" | "week";
 
 function queryString(q: Query) {
   return typeof q === "string" ? `q=${encodeURIComponent(q)},${COUNTRY}` : `lat=${q.lat}&lon=${q.lon}`;
@@ -54,6 +57,7 @@ export default function Home() {
   const [air, setAir] = useState<AirQuality | null>(null);
   const [otherCities, setOtherCities] = useState<CitySummary[]>([]);
   const [selectedDay, setSelectedDay] = useState(0);
+  const [view, setView] = useState<View>("today");
   const [panel, setPanel] = useState<Panel>("rain");
   // No key → the setup notice renders instead, so nothing is ever loading.
   const [loading, setLoading] = useState(Boolean(API_KEY));
@@ -166,13 +170,11 @@ export default function Home() {
 
   const tz = current?.timezone ?? 0;
   const selected = days[selectedDay];
-  // For "Today", roll into tomorrow's slots so the chart always covers ~24h
+  // Roll today into tomorrow's slots so hourly views always cover ~24h
   // (late in the evening only one or two of today's 3-hour slots remain).
-  const rainSlots =
-    selectedDay === 0
-      ? [...(days[0]?.slots ?? []), ...(days[1]?.slots ?? [])]
-      : selected?.slots ?? [];
-  const rainData = rainSlots.slice(0, 8).map((s) => ({
+  const next24 = [...(days[0]?.slots ?? []), ...(days[1]?.slots ?? [])].slice(0, 8);
+  const rainSlots = selectedDay === 0 ? next24 : (selected?.slots ?? []).slice(0, 8);
+  const rainData = rainSlots.map((s) => ({
     label: fmtHour(s.dt, tz),
     pop: Math.round(s.pop * 100),
   }));
@@ -235,17 +237,24 @@ export default function Home() {
       ) : (
         <>
           <div className="flex flex-wrap items-center gap-3 mb-6">
-            <div className="flex gap-1 p-1.5 rounded-full neu-inset-sm" role="group" aria-label="Forecast day">
-              <button type="button" className={dayTabClass(selectedDay === 0)} onClick={() => setSelectedDay(0)}>
+            <div className="flex gap-1 p-1.5 rounded-full neu-inset-sm" role="group" aria-label="Forecast view">
+              <button
+                type="button"
+                className={dayTabClass(view === "today")}
+                onClick={() => {
+                  setView("today");
+                  setSelectedDay(0);
+                }}
+              >
                 Today
               </button>
               <button
                 type="button"
-                className={dayTabClass(selectedDay === 1)}
-                onClick={() => setSelectedDay(1)}
+                className={dayTabClass(view === "week")}
+                onClick={() => setView("week")}
                 disabled={days.length < 2}
               >
-                Tomorrow
+                Next 6 days
               </button>
             </div>
             <div className="ml-auto flex gap-1 p-1.5 rounded-full neu-inset-sm" role="group" aria-label="Chart panel">
@@ -275,20 +284,26 @@ export default function Home() {
               />
             </div>
 
-            {/* auto-fit collapses unused tracks, so late-night days-remaining < 5 still fills the row */}
-            <div className="lg:col-span-8 xl:col-span-6 grid grid-cols-[repeat(auto-fit,minmax(110px,1fr))] gap-4 xl:gap-5">
-              {days.slice(1, 6).map((d, i) => (
-                <ForecastCard
-                  key={d.key}
-                  dayName={getShortDay(d.dt, tz)}
-                  code={d.code}
-                  condition={d.condition}
-                  min={d.min}
-                  max={d.max}
-                  selected={selectedDay === i + 1}
-                  onSelect={() => setSelectedDay(i + 1)}
-                />
-              ))}
+            <div className="lg:col-span-8 xl:col-span-6">
+              {view === "today" ? (
+                <HourlyStrip slots={next24} tz={tz} />
+              ) : (
+                // auto-fit collapses unused tracks, so fewer-than-6 days still fills the row
+                <div className="grid grid-cols-[repeat(auto-fit,minmax(110px,1fr))] gap-4 xl:gap-5 h-full">
+                  {days.slice(0, 6).map((d, i) => (
+                    <ForecastCard
+                      key={d.key}
+                      dayName={i === 0 ? "Today" : getShortDay(d.dt, tz)}
+                      code={d.code}
+                      condition={d.condition}
+                      min={d.min}
+                      max={d.max}
+                      selected={selectedDay === i}
+                      onSelect={() => setSelectedDay(i)}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="lg:col-span-12 xl:col-span-3">
