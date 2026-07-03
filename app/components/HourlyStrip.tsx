@@ -17,17 +17,17 @@ function HourTile({ point, now }: { point: HourlyPoint; now: boolean }) {
   return (
     <div
       role="listitem"
-      className={`flex-1 w-[88px] flex flex-col items-center justify-center gap-1.5 p-2 rounded-3xl ${
-        now ? "neu-inset" : "neu-sm"
+      className={`flex-1 w-[88px] flex flex-col items-center justify-center gap-1.5 p-2 rounded-3xl border ${
+        now ? "border-accent neu-inset" : "border-edge neu-sm"
       }`}
       title={`${fmtHour(point.dt, 0)}: ${Math.round(point.temp)}°, ${Math.round(point.pop)}% rain`}
     >
-      <div className={`text-[11px] font-semibold whitespace-nowrap ${now ? "text-accent" : "text-muted"}`}>
+      <div className={`text-xs font-semibold whitespace-nowrap ${now ? "text-accent" : "text-muted"}`}>
         {fmtHour(point.dt, 0)}
       </div>
       <WeatherIcon code={point.code} size={26} />
       <div className="text-base font-bold text-ink leading-none">{Math.round(point.temp)}°</div>
-      <div className="flex items-center gap-1 text-[10px] font-medium text-accent2">
+      <div className="flex items-center gap-1 text-xs font-medium text-accent2">
         <Droplets size={10} aria-hidden="true" />
         {Math.round(point.pop)}%
       </div>

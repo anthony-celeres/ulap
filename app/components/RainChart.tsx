@@ -22,7 +22,7 @@ export default function RainChart({ dayName, data }: RainChartProps) {
         <p className="text-xs text-muted flex-1 flex items-center">No hourly data for this day.</p>
       ) : (
         <div className="relative flex-1 min-h-44 rounded-2xl neu-inset-sm p-4">
-          <div className="absolute left-4 top-4 bottom-[34px] flex flex-col justify-between text-[10px] text-muted">
+          <div className="absolute left-4 top-4 bottom-[34px] flex flex-col justify-between text-xs text-muted">
             <span>100%</span>
             <span>50%</span>
             <span>0%</span>
@@ -43,7 +43,7 @@ export default function RainChart({ dayName, data }: RainChartProps) {
                 {/* labels overflow their narrow columns, so render every other one */}
                 <div className="relative h-[18px]">
                   {idx % 2 === 0 && (
-                    <span className="absolute top-1 left-1/2 -translate-x-1/2 text-[10px] text-muted whitespace-nowrap">
+                    <span className="absolute top-1 left-1/2 -translate-x-1/2 text-xs text-muted whitespace-nowrap">
                       {item.label}
                     </span>
                   )}

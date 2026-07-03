@@ -20,7 +20,7 @@ interface TopBarProps {
 }
 
 const iconButtonClass =
-  "flex items-center justify-center cursor-pointer bg-surface rounded-full w-11 h-11 text-muted neu-sm active:neu-inset-sm transition-shadow duration-150";
+  "flex items-center justify-center cursor-pointer bg-surface rounded-full w-11 h-11 text-muted border border-edge neu-sm active:neu-inset-sm transition-shadow duration-150";
 
 // Every suggestion is in the Philippines, so the province/region is the
 // useful disambiguator (five PH towns are named San Fernando).
@@ -129,7 +129,7 @@ export default function TopBar({
         />
         <input
           ref={inputRef}
-          className="flex-1 min-w-0 bg-transparent rounded-full neu-inset-sm py-2.5 pl-11 pr-4 text-sm text-ink placeholder:text-muted outline-none"
+          className="flex-1 min-w-0 bg-transparent rounded-full border border-edge neu-inset-sm py-2.5 pl-11 pr-4 text-sm text-ink placeholder:text-muted outline-none"
           type="text"
           placeholder="Search a city in the Philippines…"
           role="combobox"
@@ -163,7 +163,7 @@ export default function TopBar({
             id="city-suggestions"
             role="listbox"
             aria-label="City suggestions"
-            className="absolute left-0 right-0 top-full mt-3 z-50 rounded-3xl neu bg-app p-2"
+            className="absolute left-0 right-0 top-full mt-3 z-50 rounded-3xl border border-edge neu bg-app p-2"
           >
             {suggestions.map((s, i) => (
               <li key={`${s.name}-${s.lat}-${s.lon}`} role="option" aria-selected={i === active} id={`city-option-${i}`}>

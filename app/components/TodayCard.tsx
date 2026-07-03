@@ -58,7 +58,7 @@ export default function TodayCard({
       <dl className="grid grid-cols-2 gap-3 mt-auto">
         {details.map((d) => (
           <div key={d.label} className="rounded-2xl neu-inset-sm px-3 py-2.5 text-center">
-            <dt className="text-[10px] uppercase tracking-wide text-muted">{d.label}</dt>
+            <dt className="text-xs uppercase tracking-wide text-muted">{d.label}</dt>
             <dd className="text-sm font-semibold text-ink mt-0.5">{d.value}</dd>
           </div>
         ))}

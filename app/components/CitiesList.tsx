@@ -20,12 +20,12 @@ export default function CitiesList({ cities, onSelect }: CitiesListProps) {
             type="button"
             onClick={() => onSelect(city.name)}
             title={`Show weather for ${city.name}`}
-            className="flex items-center justify-between py-3 px-5 rounded-3xl neu-sm active:neu-inset-sm cursor-pointer text-left transition-shadow duration-150"
+            className="flex items-center justify-between py-3 px-5 rounded-3xl border border-edge hover:border-accent neu-sm active:neu-inset-sm cursor-pointer text-left transition-shadow duration-150"
           >
             <div className="flex flex-col gap-0.5">
-              <span className="text-[10px] uppercase tracking-wide text-muted">{city.country}</span>
+              <span className="text-xs uppercase tracking-wide text-muted">{city.country}</span>
               <span className="text-sm font-semibold text-ink">{city.name}</span>
-              <span className="text-[11px] text-muted">{city.condition}</span>
+              <span className="text-xs text-muted">{city.condition}</span>
             </div>
             <div className="flex items-center gap-3">
               <WeatherIcon code={city.code} size={30} />
