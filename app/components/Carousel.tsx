@@ -11,13 +11,12 @@ interface CarouselProps {
 }
 
 const arrowClass =
-  "absolute top-1/2 -translate-y-1/2 z-10 flex items-center justify-center w-9 h-9 rounded-full bg-surface text-muted border border-edge neu-sm active:neu-inset-sm transition-shadow duration-150 cursor-pointer";
+  "absolute top-1/2 -translate-y-1/2 z-10 flex items-center justify-center w-8 h-8 rounded-full bg-surface text-muted border border-edge neu-sm active:neu-inset-sm transition-shadow duration-150 cursor-pointer";
 
 /**
  * Horizontal scroll strip with neumorphic arrow controls. The scrollbar is
- * hidden; arrows appear only on the sides that still have content. Extra
- * padding (offset by negative margin) keeps the tiles' soft shadows from
- * being clipped by the scroll container.
+ * hidden; arrows appear only on the sides that still have content and stay
+ * inside the strip so they never overlap neighboring content.
  */
 export default function Carousel({ children, ariaLabel, scrollToIndex }: CarouselProps) {
   const trackRef = useRef<HTMLDivElement>(null);
@@ -50,7 +49,7 @@ export default function Carousel({ children, ariaLabel, scrollToIndex }: Carouse
       const el = trackRef.current;
       const child = el?.children[scrollToIndex] as HTMLElement | undefined;
       if (el && child) {
-        el.scrollLeft = Math.max(0, child.offsetLeft - el.offsetLeft - 16);
+        el.scrollLeft = Math.max(0, child.offsetLeft - el.offsetLeft - 4);
       }
     });
     return () => cancelAnimationFrame(raf);
@@ -69,18 +68,18 @@ export default function Carousel({ children, ariaLabel, scrollToIndex }: Carouse
         ref={trackRef}
         role="list"
         aria-label={ariaLabel}
-        className="h-full flex gap-3 xl:gap-4 overflow-x-auto snap-x no-scrollbar p-4 -m-4 scroll-p-4"
+        className="h-full flex gap-1.5 xl:gap-2 overflow-x-auto snap-x no-scrollbar p-1 -m-1 scroll-p-1"
       >
         {children}
       </div>
       {canLeft && (
-        <button type="button" aria-label="Scroll back" onClick={() => scroll(-1)} className={`${arrowClass} left-0 -translate-x-1/3`}>
-          <ChevronLeft size={18} aria-hidden="true" />
+        <button type="button" aria-label="Scroll back" onClick={() => scroll(-1)} className={`${arrowClass} left-0`}>
+          <ChevronLeft size={16} aria-hidden="true" />
         </button>
       )}
       {canRight && (
-        <button type="button" aria-label="Scroll forward" onClick={() => scroll(1)} className={`${arrowClass} right-0 translate-x-1/3`}>
-          <ChevronRight size={18} aria-hidden="true" />
+        <button type="button" aria-label="Scroll forward" onClick={() => scroll(1)} className={`${arrowClass} right-0`}>
+          <ChevronRight size={16} aria-hidden="true" />
         </button>
       )}
     </div>
