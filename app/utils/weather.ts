@@ -37,6 +37,35 @@ export function msToKmh(ms: number) {
   return Math.round(ms * 3.6);
 }
 
+/** DOH/PAGASA-style heat index categories, from the feels-like temp in °C. */
+export function heatWarning(feelsLike: number): { label: string; color: string } | null {
+  if (feelsLike >= 52) return { label: "Extreme danger", color: "#ef4444" };
+  if (feelsLike >= 42) return { label: "Danger", color: "#f97316" };
+  if (feelsLike >= 33) return { label: "Extreme caution", color: "#f59e0b" };
+  return null;
+}
+
+/** WHO UV index categories. */
+export function uvCategory(uv: number): { label: string; color: string } {
+  if (uv >= 11) return { label: "Extreme", color: "#a855f7" };
+  if (uv >= 8) return { label: "Very high", color: "#ef4444" };
+  if (uv >= 6) return { label: "High", color: "#f97316" };
+  if (uv >= 3) return { label: "Moderate", color: "#f59e0b" };
+  return { label: "Low", color: "#22c55e" };
+}
+
+/** First thunderstorm or heavy-rain hour within the next 24 hours, if any. */
+export function findSevereHour(hours: HourlyPoint[], nowDt: number): HourlyPoint | null {
+  return (
+    hours.find(
+      (h) =>
+        h.dt >= nowDt - 1800 &&
+        h.dt <= nowDt + 86400 &&
+        ((h.code >= 200 && h.code < 300) || h.code === 502 || h.code === 522)
+    ) ?? null
+  );
+}
+
 export const AQI_LEVELS = ["Good", "Fair", "Moderate", "Poor", "Very Poor"] as const;
 
 export function describeAqi(aqi: number) {
