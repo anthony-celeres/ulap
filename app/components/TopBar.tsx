@@ -161,7 +161,7 @@ export default function TopBar({
       </div>
 
       <form
-        className="relative flex-1 min-w-[220px] flex gap-3"
+        className="relative basis-full xs:basis-auto xs:flex-1 xs:min-w-[220px] flex gap-3"
         role="search"
         onSubmit={(e) => {
           e.preventDefault();

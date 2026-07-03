@@ -38,6 +38,11 @@
   --edge: rgba(152, 164, 184, 0.4);
 }
 
+/* Extra-small breakpoint for very narrow phones. */
+@theme {
+  --breakpoint-xs: 25rem;
+}
+
 /* Map tokens into Tailwind so components use semantic utilities
    (bg-surface, text-muted, …) that flip with the theme. */
 @theme inline {
