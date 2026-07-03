@@ -171,22 +171,6 @@ export default function Home() {
     }
   }, []);
 
-  useEffect(() => {
-    let saved: string | null = null;
-    let geoAsked = true;
-    try {
-      saved = localStorage.getItem(LAST_CITY_KEY);
-      geoAsked = localStorage.getItem(GEO_ASKED_KEY) !== null;
-    } catch {
-      // storage unavailable — fall back to the default city
-    }
-    if (!saved && !geoAsked) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time first-visit setup on mount
-      setAskGeo(true);
-    }
-    fetchWeatherData(saved || DEFAULT_CITY);
-  }, [fetchWeatherData]);
-
   const dismissGeo = useCallback(() => {
     setAskGeo(false);
     try {
@@ -243,6 +227,24 @@ export default function Home() {
     },
     [fetchWeatherData]
   );
+
+  // Initial load goes through the geocoder too, so the saved or default
+  // city comes back with its full address.
+  useEffect(() => {
+    let saved: string | null = null;
+    let geoAsked = true;
+    try {
+      saved = localStorage.getItem(LAST_CITY_KEY);
+      geoAsked = localStorage.getItem(GEO_ASKED_KEY) !== null;
+    } catch {
+      // storage unavailable — fall back to the default city
+    }
+    if (!saved && !geoAsked) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time first-visit setup on mount
+      setAskGeo(true);
+    }
+    handleSearch(saved || DEFAULT_CITY);
+  }, [handleSearch]);
 
   const handleLocate = useCallback(() => {
     if (!navigator.geolocation) {
