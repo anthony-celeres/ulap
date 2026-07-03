@@ -250,7 +250,8 @@ export default function TopBar({
         )}
       </form>
 
-      <div className="flex items-center gap-3 ml-auto">
+      {/* Below md this drops to its own row: location left, controls right. */}
+      <div className="flex items-center gap-3 basis-full justify-between md:basis-auto md:ml-auto md:justify-end">
         {/* Plain label, styled like the section headings. */}
         <div className="flex items-center gap-2 text-sm font-semibold text-ink whitespace-nowrap">
           <MapPin size={15} className="text-accent" aria-hidden="true" />
@@ -259,19 +260,21 @@ export default function TopBar({
             {country ? `, ${country}` : ""}
           </span>
         </div>
-        <UpdatedBadge updatedAt={updatedAt} loading={loading} onRefresh={onRefresh} />
-        <button type="button" className={iconButtonClass} onClick={onLocate} aria-label="Use my location" title="Use my location">
-          <LocateFixed size={18} aria-hidden="true" />
-        </button>
-        <button
-          type="button"
-          className={iconButtonClass}
-          onClick={toggleTheme}
-          aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-          title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-        >
-          {theme === "dark" ? <Sun size={18} aria-hidden="true" /> : <Moon size={18} aria-hidden="true" />}
-        </button>
+        <div className="flex items-center gap-3">
+          <UpdatedBadge updatedAt={updatedAt} loading={loading} onRefresh={onRefresh} />
+          <button type="button" className={iconButtonClass} onClick={onLocate} aria-label="Use my location" title="Use my location">
+            <LocateFixed size={18} aria-hidden="true" />
+          </button>
+          <button
+            type="button"
+            className={iconButtonClass}
+            onClick={toggleTheme}
+            aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+            title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+          >
+            {theme === "dark" ? <Sun size={18} aria-hidden="true" /> : <Moon size={18} aria-hidden="true" />}
+          </button>
+        </div>
       </div>
     </header>
   );
