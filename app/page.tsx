@@ -60,7 +60,7 @@ export default function Home() {
   const updatedAtRef = useRef(0);
   const hasDataRef = useRef(false);
 
-  const fetchWeatherData = useCallback(async (query: Query, opts?: { silent?: boolean }) => {
+  const fetchWeatherData = useCallback(async (query: Query, opts?: { silent?: boolean; label?: string }) => {
     // A newer request supersedes any in-flight one.
     abortRef.current?.abort();
     const ac = new AbortController();
@@ -82,28 +82,31 @@ export default function Home() {
         );
       }
       const payload: WeatherPayload = await res.json();
+      // A geocoded pick (e.g. a barangay) keeps its own name on display —
+      // the weather API would otherwise rename it to the nearest station.
+      const displayName = opts?.label ?? payload.current.name;
       setCurrent(payload.current);
       setHourlyAll(payload.hourly);
       setDays(payload.days);
       setAir(payload.air);
       setOtherCities(payload.cities);
-      setCity(payload.current.name);
-      setInputCity(payload.current.name);
+      setCity(displayName);
+      setInputCity(displayName);
       if (!opts?.silent) setSelectedDay(0);
       hasDataRef.current = true;
       setStaleLabel(null);
       updatedAtRef.current = Date.now();
       setUpdatedAt(updatedAtRef.current);
-      setAnnouncement(`Weather for ${payload.current.name} updated`);
+      setAnnouncement(`Weather for ${displayName} updated`);
       try {
-        localStorage.setItem(LAST_CITY_KEY, payload.current.name);
+        localStorage.setItem(LAST_CITY_KEY, displayName);
         // Keep a last-known copy so the app still shows weather offline.
         localStorage.setItem(PAYLOAD_KEY, JSON.stringify({ payload, at: Date.now() }));
         const raw = localStorage.getItem(RECENTS_KEY);
         const list: { name: string; lat: number; lon: number }[] = raw ? JSON.parse(raw) : [];
         const next = [
-          { name: payload.current.name, lat: payload.current.coord.lat, lon: payload.current.coord.lon },
-          ...list.filter((r) => r.name !== payload.current.name),
+          { name: displayName, lat: payload.current.coord.lat, lon: payload.current.coord.lon },
+          ...list.filter((r) => r.name !== displayName),
         ].slice(0, 5);
         localStorage.setItem(RECENTS_KEY, JSON.stringify(next));
       } catch {
@@ -188,7 +191,7 @@ export default function Home() {
 
   const handleSelectLocation = useCallback(
     (place: GeoSuggestion) => {
-      fetchWeatherData({ lat: place.lat, lon: place.lon });
+      fetchWeatherData({ lat: place.lat, lon: place.lon }, { label: place.name });
     },
     [fetchWeatherData]
   );
