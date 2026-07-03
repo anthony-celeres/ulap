@@ -1,10 +1,14 @@
 "use client";
 
-import { Sunrise, Sunset, TriangleAlert } from "lucide-react";
+import { MapPin, Sunrise, Sunset, TriangleAlert } from "lucide-react";
 import { heatWarning, uvCategory } from "../utils/weather";
 import WeatherIcon from "./WeatherIcon";
 
 interface TodayCardProps {
+  /** Searched place name, e.g. a barangay. */
+  location: string;
+  /** Rest of the address — municipality/city, province. */
+  locationDetail?: string;
   day: string;
   time: string;
   code: number;
@@ -21,6 +25,8 @@ interface TodayCardProps {
 }
 
 export default function TodayCard({
+  location,
+  locationDetail,
   day,
   time,
   code,
@@ -49,12 +55,18 @@ export default function TodayCard({
       aria-label={`Current weather: ${condition}, ${temp} degrees`}
       className="h-full flex flex-col gap-4 p-6 xl:p-7 rounded-3xl neu"
     >
-      <div className="flex items-start justify-between">
-        <div>
-          <div className="text-base font-semibold text-ink">{day}</div>
-          <div className="text-xs text-muted mt-0.5">{time}</div>
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="flex items-center gap-1.5 text-base font-semibold text-ink">
+            <MapPin size={15} className="text-accent shrink-0" aria-hidden="true" />
+            <span className="truncate">{location}</span>
+          </div>
+          {locationDetail && <div className="text-xs text-muted mt-0.5 truncate">{locationDetail}</div>}
+          <div className="text-xs text-muted mt-1">
+            {day} · {time}
+          </div>
         </div>
-        <WeatherIcon code={code} size={52} />
+        <WeatherIcon code={code} size={52} className="shrink-0" />
       </div>
 
       <div>

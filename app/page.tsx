@@ -390,6 +390,8 @@ export default function Home() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 xl:gap-6">
             <div className="lg:col-span-4 xl:col-span-3">
               <TodayCard
+                location={city}
+                locationDetail={cityDetail ?? undefined}
                 day={getDayName(current.dt, tz)}
                 time={fmtTime(current.dt, tz)}
                 code={current.weather[0].id}
