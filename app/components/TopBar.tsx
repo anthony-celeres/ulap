@@ -155,18 +155,9 @@ export default function TopBar({
 
   return (
     <header className="flex flex-wrap items-center gap-x-4 gap-y-3 mb-8">
-      <div className="flex items-center gap-4">
-        <div className="flex items-center gap-2 text-2xl font-bold tracking-tight">
-          <Cloud size={28} className="text-accent" fill="currentColor" strokeWidth={0} aria-hidden="true" />
-          <span className="text-gradient">ulap</span>
-        </div>
-        <div className="flex items-center gap-2 rounded-full neu-sm py-2.5 px-5 text-sm font-medium text-ink">
-          <MapPin size={15} className="text-accent" aria-hidden="true" />
-          <span>
-            {city}
-            {country ? `, ${country}` : ""}
-          </span>
-        </div>
+      <div className="flex items-center gap-2 text-2xl font-bold tracking-tight">
+        <Cloud size={28} className="text-accent" fill="currentColor" strokeWidth={0} aria-hidden="true" />
+        <span className="text-gradient">ulap</span>
       </div>
 
       <form
@@ -259,6 +250,13 @@ export default function TopBar({
       </form>
 
       <div className="flex items-center gap-3 ml-auto">
+        <div className="flex items-center gap-2 rounded-full neu-sm py-2.5 px-5 text-sm font-medium text-ink whitespace-nowrap">
+          <MapPin size={15} className="text-accent" aria-hidden="true" />
+          <span>
+            {city}
+            {country ? `, ${country}` : ""}
+          </span>
+        </div>
         <UpdatedBadge updatedAt={updatedAt} loading={loading} onRefresh={onRefresh} />
         <button type="button" className={iconButtonClass} onClick={onLocate} aria-label="Use my location" title="Use my location">
           <LocateFixed size={18} aria-hidden="true" />
