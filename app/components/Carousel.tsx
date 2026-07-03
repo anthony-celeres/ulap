@@ -9,7 +9,7 @@ interface CarouselProps {
 }
 
 const arrowClass =
-  "absolute top-1/2 -translate-y-1/2 z-10 flex items-center justify-center w-9 h-9 rounded-full bg-surface text-muted neu-sm active:neu-inset-sm transition-shadow duration-150 cursor-pointer";
+  "absolute top-1/2 -translate-y-1/2 z-10 flex items-center justify-center w-9 h-9 rounded-full bg-surface text-muted border border-edge neu-sm active:neu-inset-sm transition-shadow duration-150 cursor-pointer";
 
 /**
  * Horizontal scroll strip with neumorphic arrow controls. The scrollbar is

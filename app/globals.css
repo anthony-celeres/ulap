@@ -19,6 +19,9 @@
   --accent: #2f7cf6;
   --accent2: #38bdf8;
   --hero-grad: linear-gradient(135deg, #58a6ff 0%, #2f7cf6 100%);
+  /* Soft outline for interactive surfaces — shadows alone don't meet
+     WCAG 1.4.11 non-text contrast. */
+  --edge: rgba(95, 107, 124, 0.45);
 }
 
 .dark {
@@ -32,6 +35,7 @@
   --accent: #5b9dff;
   --accent2: #4cc9f0;
   --hero-grad: linear-gradient(135deg, #3d7ff0 0%, #1e4fae 100%);
+  --edge: rgba(152, 164, 184, 0.4);
 }
 
 /* Map tokens into Tailwind so components use semantic utilities
@@ -44,6 +48,7 @@
   --color-muted: var(--muted);
   --color-accent: var(--accent);
   --color-accent2: var(--accent2);
+  --color-edge: var(--edge);
 }
 
 /* Raised surfaces */
