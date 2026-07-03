@@ -74,6 +74,14 @@
   background-image: var(--hero-grad);
 }
 
+/* Scroll strips rely on arrow buttons; the native scrollbar would break the soft-UI look. */
+@utility no-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 @utility text-gradient {
   background-image: var(--hero-grad);
   background-clip: text;
