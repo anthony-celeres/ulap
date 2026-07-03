@@ -161,7 +161,7 @@ export default function TopBar({
       </div>
 
       <form
-        className="relative flex-1 min-w-[220px]"
+        className="relative flex-1 min-w-[220px] flex gap-3"
         role="search"
         onSubmit={(e) => {
           e.preventDefault();
@@ -176,7 +176,7 @@ export default function TopBar({
         />
         <input
           ref={inputRef}
-          className="w-full bg-transparent rounded-full border border-edge neu-inset-sm py-2.5 pl-11 pr-24 text-sm text-ink placeholder:text-muted outline-none"
+          className="flex-1 min-w-0 bg-transparent rounded-full border border-edge neu-inset-sm py-2.5 pl-11 pr-4 text-sm text-ink placeholder:text-muted outline-none"
           type="text"
           placeholder="Search a city in the Philippines…"
           role="combobox"
@@ -201,11 +201,11 @@ export default function TopBar({
           }}
           onBlur={() => setTimeout(() => setOpen(false), 150)}
         />
-        {/* Nested inside the field so the bar reads as one control. */}
+        {/* Raised pill like the active view toggles. */}
         <button
           type="submit"
           disabled={loading}
-          className="absolute right-1.5 top-1/2 -translate-y-1/2 bg-hero-grad text-white rounded-full px-4 py-1.5 text-xs font-semibold cursor-pointer hover:opacity-90 active:opacity-75 transition-opacity duration-150 whitespace-nowrap disabled:opacity-60 disabled:cursor-wait"
+          className="bg-surface text-accent neu-sm active:neu-inset-sm rounded-full px-5 py-2.5 text-sm font-semibold cursor-pointer transition-shadow duration-150 whitespace-nowrap disabled:opacity-60 disabled:cursor-wait"
         >
           Search
         </button>
@@ -251,7 +251,8 @@ export default function TopBar({
       </form>
 
       <div className="flex items-center gap-3 ml-auto">
-        <div className="flex items-center gap-2 rounded-full neu-sm py-2.5 px-5 text-sm font-medium text-ink whitespace-nowrap">
+        {/* Plain label, styled like the section headings. */}
+        <div className="flex items-center gap-2 text-sm font-semibold text-ink whitespace-nowrap">
           <MapPin size={15} className="text-accent" aria-hidden="true" />
           <span>
             {city}
