@@ -19,7 +19,7 @@ export default function MapSection({ city, lat, lon }: MapSectionProps) {
   const mapLink = `https://www.google.com/maps/search/?api=1&query=${lat},${lon}`;
 
   return (
-    <section aria-label={`Map of ${city}`} className="h-full flex flex-col p-6 rounded-3xl neu">
+    <section aria-label={`Map of ${city}`} className="h-full flex flex-col p-6 rounded-3xl bg-surface border border-edge/30 neu">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-sm font-semibold text-ink">Map</h3>
         <a
@@ -31,7 +31,7 @@ export default function MapSection({ city, lat, lon }: MapSectionProps) {
           Open in Google Maps <ExternalLink size={12} aria-hidden="true" />
         </a>
       </div>
-      <div className="relative isolate flex-1 min-h-[260px] xl:min-h-[320px] rounded-2xl neu-inset-sm overflow-hidden">
+      <div className="relative isolate flex-1 min-h-[260px] xl:min-h-[320px] rounded-2xl border border-edge/35 overflow-hidden">
         <LeafletMap lat={lat} lon={lon} city={city} />
       </div>
     </section>

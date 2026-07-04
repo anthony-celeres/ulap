@@ -202,7 +202,7 @@ export default function TopBar({
         <button
           type="submit"
           disabled={loading}
-          className="bg-accent text-white neu-sm active:neu-inset-sm rounded-full px-5 py-2.5 text-sm font-semibold cursor-pointer transition-shadow duration-150 whitespace-nowrap disabled:opacity-60 disabled:cursor-wait"
+          className="bg-surface border border-edge text-ink neu-sm active:neu-inset-sm rounded-full px-5 py-2.5 text-sm font-semibold cursor-pointer transition-shadow duration-150 whitespace-nowrap disabled:opacity-60 disabled:cursor-wait"
         >
           Search
         </button>

@@ -56,7 +56,7 @@ export default function TodayCard({
   return (
     <section
       aria-label={`Current weather: ${condition}, ${temp} degrees`}
-      className="h-full flex flex-col gap-4 p-6 xl:p-7 rounded-3xl neu"
+      className="h-full flex flex-col gap-4 p-6 xl:p-7 rounded-3xl bg-surface border border-edge/30 neu"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
@@ -76,24 +76,32 @@ export default function TodayCard({
         <div className="text-6xl xl:text-7xl font-bold leading-none text-gradient">{temp}°</div>
         <div className="text-sm text-muted capitalize mt-2">{condition}</div>
         {heat && (
-          <div className="flex items-center gap-1.5 mt-2 text-xs font-semibold" style={{ color: heat.color }}>
-            <TriangleAlert size={13} aria-hidden="true" />
-            Heat: {heat.label.toLowerCase()} — feels like {realFeel}°
+          <div
+            className="flex items-center gap-2 mt-3 px-4 py-2.5 rounded-2xl neu-inset-sm text-xs font-semibold"
+            style={{
+              color: heat.color,
+              backgroundColor: `${heat.color}0c`, // ~5% opacity for a soft tint
+            }}
+          >
+            <TriangleAlert size={14} className="shrink-0" aria-hidden="true" />
+            <span>
+              Heat Index: {heat.label}
+            </span>
           </div>
         )}
       </div>
 
       <dl className="grid grid-cols-2 gap-3 mt-auto">
         {details.map((d) => (
-          <div key={d.label} className="rounded-2xl neu-inset-sm px-3 py-2.5 text-center">
-            <dt className="text-xs uppercase tracking-wide text-muted">{d.label}</dt>
-            <dd className="text-sm font-semibold text-ink mt-0.5">{d.value}</dd>
+          <div key={d.label} className="rounded-2xl bg-well/30 neu-inset-sm px-3 py-2.5 text-center">
+            <dt className="text-[10px] uppercase tracking-wider text-muted font-medium">{d.label}</dt>
+            <dd className="text-sm font-bold text-ink mt-0.5">{d.value}</dd>
           </div>
         ))}
         {uvInfo && (
-          <div className="col-span-2 rounded-2xl neu-inset-sm px-3 py-2.5 text-center">
-            <dt className="text-xs uppercase tracking-wide text-muted">UV index</dt>
-            <dd className="text-sm font-semibold text-ink mt-0.5 flex items-center justify-center gap-1.5">
+          <div className="col-span-2 rounded-2xl bg-well/30 neu-inset-sm px-3 py-2.5 text-center">
+            <dt className="text-[10px] uppercase tracking-wider text-muted font-medium">UV index</dt>
+            <dd className="text-sm font-bold text-ink mt-0.5 flex items-center justify-center gap-1.5">
               <span aria-hidden="true" className="inline-block w-2 h-2 rounded-full" style={{ background: uvInfo.color }} />
               {Math.round(uv!)} · {uvInfo.label}
             </dd>
@@ -101,17 +109,19 @@ export default function TodayCard({
         )}
       </dl>
 
-      <div className="flex justify-between gap-2 text-xs text-muted">
-        <span className="flex items-center gap-1.5">
-          <Sunrise size={15} className="text-amber-500" aria-hidden="true" /> {sunrise}
+      <div className="flex items-center justify-between px-4 py-2.5 rounded-2xl bg-well/20 neu-inset-sm text-xs text-muted">
+        <span className="flex items-center gap-2">
+          <Sunrise size={14} className="text-amber-500 shrink-0" aria-hidden="true" />
+          <span>Sunrise: <span className="font-semibold text-ink">{sunrise}</span></span>
         </span>
-        <span className="flex items-center gap-1.5">
-          <Sunset size={15} className="text-orange-400" aria-hidden="true" /> {sunset}
+        <span className="flex items-center gap-2">
+          <Sunset size={14} className="text-orange-400 shrink-0" aria-hidden="true" />
+          <span>Sunset: <span className="font-semibold text-ink">{sunset}</span></span>
         </span>
       </div>
 
       {asOf && (
-        <div className="flex items-center gap-1.5 pt-3 text-xs text-muted border-t border-edge">
+        <div className="flex items-center gap-1.5 pt-3.5 text-xs text-muted border-t border-edge/25">
           <Clock size={13} className="shrink-0" aria-hidden="true" />
           <span>As of {asOf}</span>
           <span

@@ -26,7 +26,7 @@ export default function ChartPanel({ panel, onPanelChange, dayName, data, temps,
     }`;
 
   return (
-    <section aria-label="Forecast charts" className="h-full flex flex-col p-6 rounded-3xl neu">
+    <section aria-label="Forecast charts" className="h-full flex flex-col p-6 rounded-3xl bg-surface border border-edge/30 neu">
       {/* No wrapping: the title truncates and the toggle stays pinned, so
           switching panels never moves the control under the pointer. */}
       <div className="flex items-center gap-3 mb-4">
@@ -43,7 +43,7 @@ export default function ChartPanel({ panel, onPanelChange, dayName, data, temps,
         </div>
         {panel === "rain" && hasTemps && (
           <div className="hidden xl:flex shrink-0 items-center text-xs text-muted whitespace-nowrap">
-            <span aria-hidden="true" className="inline-block w-3 border-t-2 border-accent align-middle mr-1"></span>
+            <span aria-hidden="true" className="inline-block w-3 border-t-2 border-temp-trend align-middle mr-1"></span>
             {Math.round(Math.max(...temps))}° / {Math.round(Math.min(...temps))}°
           </div>
         )}

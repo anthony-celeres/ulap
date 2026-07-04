@@ -18,6 +18,7 @@
   --muted: #5f6b7c;
   --accent: #2f7cf6;
   --accent2: #38bdf8;
+  --temp-trend: #f97316;
   --hero-grad: linear-gradient(135deg, #58a6ff 0%, #2f7cf6 100%);
   /* Soft outline for interactive surfaces — shadows alone don't meet
      WCAG 1.4.11 non-text contrast. */
@@ -34,6 +35,7 @@
   --muted: #98a4b8;
   --accent: #5b9dff;
   --accent2: #4cc9f0;
+  --temp-trend: #fb923c;
   --hero-grad: linear-gradient(135deg, #3d7ff0 0%, #1e4fae 100%);
   --edge: rgba(152, 164, 184, 0.4);
 }
@@ -53,6 +55,7 @@
   --color-muted: var(--muted);
   --color-accent: var(--accent);
   --color-accent2: var(--accent2);
+  --color-temp-trend: var(--temp-trend);
   --color-edge: var(--edge);
 }
 
@@ -156,3 +159,4 @@ body {
 .leaflet-tile {
   outline: 1px solid transparent;
 }
+
