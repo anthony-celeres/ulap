@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import {
   ArrowLeft,
   Cloud,
@@ -34,7 +35,7 @@ const iconButtonClass =
   "flex items-center justify-center cursor-pointer bg-surface rounded-full w-11 h-11 text-muted border border-edge neu-sm active:neu-inset-sm transition-shadow duration-150";
 
 function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
-  return <section className={`rounded-3xl neu p-6 xl:p-8 ${className}`}>{children}</section>;
+  return <section className={`rounded-3xl bg-surface border border-edge/30 neu p-6 xl:p-8 ${className}`}>{children}</section>;
 }
 
 function SectionTitle({ icon, children }: { icon: React.ReactNode; children: React.ReactNode }) {
@@ -136,12 +137,13 @@ export default function About() {
         <Card>
           <SectionTitle icon={<GithubMark size={17} />}>Developer</SectionTitle>
           <div className="flex items-center gap-4">
-            <div
-              className="flex items-center justify-center w-14 h-14 rounded-2xl bg-hero-grad text-white text-xl font-bold shrink-0 neu-sm"
-              aria-hidden="true"
-            >
-              AC
-            </div>
+            <Image
+              src="/developer.png"
+              alt="Anthony Celeres"
+              width={56}
+              height={56}
+              className="rounded-2xl object-cover shrink-0 border border-edge/20 neu-sm"
+            />
             <div className="min-w-0">
               <div className="text-base font-semibold text-ink">Anthony Celeres</div>
               <div className="text-sm text-muted">Designer & developer of ulap</div>
