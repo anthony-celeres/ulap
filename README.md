@@ -50,22 +50,23 @@ It's an **API-integration project**: several free weather and mapping APIs stitc
 
 > 💡 The running app has an in-app **About** page (the ⓘ button in the header, or [`/about`](app/about/page.tsx)) that credits the developer and walks through how the API integration and the neumorphic design system work.
 
-## Features
+## ✨ Features
 
-- **Live current conditions** — temperature, real feel, wind, pressure, humidity, sunrise/sunset, all shown in the searched city's local time, plus an *"As of"* timestamp of the underlying reading. The current conditions and the forecast come from the **same model (Open-Meteo)**, so the headline number and the strip below it never contradict each other.
-- **Hourly today + multi-day forecast** — a Google Weather-style toggle backed by real per-hour data from Open-Meteo: *Today* shows all 24 hours of the local day in two clock-aligned rows (12 AM–11 AM over 12 PM–11 PM), with the current hour highlighted; the *multi-day* view shows a full week of day cards with real high/low temperatures. Both strips scroll horizontally with neumorphic arrow buttons (and swipe/trackpad) — no visible scrollbar, nothing cut off at any screen size.
-- **Hourly rain chart** — real probability-of-precipitation data. In the multi-day view, click any day card to see that day's hourly rain chances.
-- **Air quality** — toggle the chart panel to see the Air Quality Index (1–5) and PM2.5 / PM10 / O₃ / NO₂ concentrations.
-- **Search down to barangay level** — the autocomplete is backed by Photon (OpenStreetMap data), so specific places like *Holy Spirit, Quezon City* or *Poblacion, Makati* resolve with their city and province shown; weather loads by exact coordinates and the place keeps its own name on display. Philippines-only, keyboard-navigable, with OpenWeatherMap geocoding as an automatic fallback. Or use the locate button (reverse-geocoded) for where you are.
-- **"Around the Philippines"** — a strip of other major cities (Cebu, Davao, Baguio, Iloilo, Manila) you can tap to switch to, sourced from Open-Meteo and always excluding the city you're currently viewing.
-- **Themed interactive map** — Leaflet with CARTO basemaps (light and dark to match the theme), centered on the selected city.
-- **Dark / light theme** — follows your OS preference by default; the toggle persists your choice, with no flash on reload.
-- **Remembers your city** — the last searched city is stored locally and restored on your next visit.
-- **Installable PWA with offline fallback** — a web manifest and a conservative service worker make ulap installable to the home screen; the last successful payload is kept locally, so going offline shows clearly-labeled saved weather instead of an error.
-- **PH-aware warnings** — UV index with WHO categories, a DOH/PAGASA-style heat-index caution, and a banner when thunderstorms or heavy rain are expected in the next 24 hours.
-- **Resilient UX** — loading skeletons, inline error banners that keep existing data on screen, quiet handling of failed background refreshes, and a friendly setup screen if the API key is missing.
-- **Accessible** — semantic HTML, keyboard-focus styles, ARIA labels on interactive elements and chart bars, and `prefers-reduced-motion` support.
-- **Responsive** — single-column on mobile, multi-column dashboard on desktop.
+### 🌤️ Weather & Analytics
+- **Live Conditions** — Real-time temperature, wind, pressure, humidity, and PAGASA/DOH-style heat index warning with UV indicators.
+- **Dual-View Forecast** — Google Weather-style toggle: 24-hour clock-aligned hourly carousel (AM/PM) and 7-day weekly outlook.
+- **Precipitation Trends** — Interactive bar charts showing hourly rain probability for any selected forecast day.
+- **Air Quality Indices** — Detailed AQI tracking (PM2.5, PM10, O₃, NO₂) at a single tap.
+
+### 🗺️ Search & Localization
+- **Barangay-Level Search** — Autocomplete powered by Photon (OSM) down to neighborhoods (e.g. *Holy Spirit, QC*), falling back to OWM.
+- **Around the Philippines** — Regional city switcher featuring Cebu, Davao, Baguio, and Iloilo, dynamically filtering the active view.
+- **Theme-Aware Mapping** — Fullscreen interactive Leaflet map matching light/dark styling centered on the coordinates.
+
+### 🎨 Design & Experience
+- **Soft-UI Aesthetic** — Modern neumorphic styling with physical card depth, clean borderlines, and responsive grid layouts.
+- **PWA & Offline Mode** — Fully installable to homescreen caching the last loaded weather details for offline retrieval.
+- **Resilient & Accessible** — Full screen loading skeletons, ARIA descriptors, semantic structure, and keyboard accessibility.
 
 ## Getting started
 
