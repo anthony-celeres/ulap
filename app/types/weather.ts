@@ -20,6 +20,15 @@ export interface CurrentWeather {
  * With `timezone=auto`, all times are local ISO strings.
  */
 export interface OpenMeteoForecast {
+  /** Present-moment nowcast; used to drive the current-conditions card. */
+  current?: {
+    temperature_2m: number;
+    relative_humidity_2m: number;
+    apparent_temperature: number;
+    weather_code: number;
+    surface_pressure: number;
+    wind_speed_10m: number;
+  };
   hourly: {
     time: string[];
     temperature_2m: number[];
