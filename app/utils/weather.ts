@@ -32,6 +32,20 @@ export function getShortDay(unixUTC: number, offsetSec: number) {
   return SHORT[toLocal(unixUTC, offsetSec).getUTCDay()];
 }
 
+export function fmtDayAndDate(unixUTC: number, offsetSec: number) {
+  const d = toLocal(unixUTC, offsetSec);
+  const now = toLocal(Math.floor(Date.now() / 1000), offsetSec);
+  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const dateStr = `${DAYS[d.getUTCDay()]}, ${months[d.getUTCMonth()]} ${d.getUTCDate()}`;
+  
+  const isToday =
+    d.getUTCDate() === now.getUTCDate() &&
+    d.getUTCMonth() === now.getUTCMonth() &&
+    d.getUTCFullYear() === now.getUTCFullYear();
+
+  return isToday ? `Today, ${dateStr}` : dateStr;
+}
+
 /** Wind speeds arrive in m/s when units=metric. */
 export function msToKmh(ms: number) {
   return Math.round(ms * 3.6);
