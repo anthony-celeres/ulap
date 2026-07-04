@@ -22,6 +22,8 @@ export interface CurrentWeather {
 export interface OpenMeteoForecast {
   /** Present-moment nowcast; used to drive the current-conditions card. */
   current?: {
+    /** Local wall-clock time of the reading, e.g. "2026-07-04T12:30". */
+    time: string;
     temperature_2m: number;
     relative_humidity_2m: number;
     apparent_temperature: number;
@@ -83,6 +85,8 @@ export interface CitySummary {
 /** Everything the dashboard needs, assembled by /api/weather. */
 export interface WeatherPayload {
   current: CurrentWeather;
+  /** When the current-conditions reading is from (UTC epoch seconds). */
+  observedAt: number;
   hourly: HourlyPoint[];
   days: DailyForecast[];
   air: AirQuality | null;
