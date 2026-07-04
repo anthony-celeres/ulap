@@ -138,3 +138,181 @@ export function toDailyForecast(om: OpenMeteoForecast): DailyForecast[] {
     max: Math.round(om.daily.temperature_2m_max[i]),
   }));
 }
+
+export interface OwmForecastItem {
+  dt: number;
+  main: {
+    temp: number;
+    temp_min: number;
+    temp_max: number;
+    feels_like: number;
+    pressure: number;
+    humidity: number;
+  };
+  weather: { id: number; main: string; description: string }[];
+  pop: number;
+}
+
+export function interpolateOwmForecast(
+  list: OwmForecastItem[],
+  offsetSec: number,
+  currentTemp: number,
+  currentCode: number,
+  minTemp: number
+): HourlyPoint[] {
+  if (list.length === 0) return [];
+
+  // Shift timestamps to local representation
+  const shiftedList = list.map(item => ({
+    ...item,
+    dt: item.dt + offsetSec
+  }));
+
+  // Calculate local midnight of the current day
+  const firstItemLocal = new Date(shiftedList[0].dt * 1000);
+  firstItemLocal.setUTCHours(0, 0, 0, 0);
+  const startDt = firstItemLocal.getTime() / 1000;
+
+  const endDt = shiftedList[shiftedList.length - 1].dt;
+  const hourlyPoints: HourlyPoint[] = [];
+
+  const owmMap = new Map<number, OwmForecastItem>();
+  for (const item of shiftedList) {
+    const t = Math.round(item.dt / 3600) * 3600;
+    owmMap.set(t, item);
+  }
+
+  for (let dt = startDt; dt <= endDt; dt += 3600) {
+    const t = Math.round(dt / 3600) * 3600;
+    const exact = owmMap.get(t);
+    if (exact) {
+      hourlyPoints.push({
+        dt,
+        temp: exact.main.temp,
+        code: exact.weather[0].id,
+        pop: Math.round((exact.pop ?? 0) * 100),
+      });
+    } else if (dt < shiftedList[0].dt) {
+      // Past or current hour before forecast starts: interpolate using a realistic diurnal temperature curve
+      const localTime = new Date(dt * 1000);
+      const hourNum = localTime.getUTCHours();
+      const currentLocalTime = new Date(shiftedList[0].dt * 1000);
+      const currentHour = currentLocalTime.getUTCHours();
+
+      let temp = currentTemp;
+      const minTempHour = 5; // coldest hour (dawn)
+      const targetMin = Math.min(minTemp, currentTemp - 1);
+      const midnightTemp = targetMin + (currentTemp - targetMin) * 0.4;
+
+      if (hourNum <= minTempHour) {
+        // Temp cools down from midnight to dawn
+        const fraction = hourNum / minTempHour;
+        temp = midnightTemp - (midnightTemp - targetMin) * fraction;
+      } else if (hourNum > minTempHour && hourNum <= currentHour) {
+        // Temp heats up from dawn to current hour
+        const fraction = (hourNum - minTempHour) / (currentHour - minTempHour || 1);
+        temp = targetMin + (currentTemp - targetMin) * fraction;
+      } else {
+        temp = currentTemp;
+      }
+
+      hourlyPoints.push({
+        dt,
+        temp: parseFloat(temp.toFixed(1)),
+        code: currentCode,
+        pop: 0,
+      });
+    } else {
+      let before: OwmForecastItem | null = null;
+      let after: OwmForecastItem | null = null;
+
+      for (let i = shiftedList.length - 1; i >= 0; i--) {
+        if (shiftedList[i].dt <= dt) {
+          before = shiftedList[i];
+          break;
+        }
+      }
+      for (let i = 0; i < shiftedList.length; i++) {
+        if (shiftedList[i].dt >= dt) {
+          after = shiftedList[i];
+          break;
+        }
+      }
+
+      if (before && after) {
+        const fraction = (dt - before.dt) / (after.dt - before.dt);
+        const temp = before.main.temp + (after.main.temp - before.main.temp) * fraction;
+        const popVal = before.pop + (after.pop - before.pop) * fraction;
+        const closest = (dt - before.dt < after.dt - dt) ? before : after;
+
+        hourlyPoints.push({
+          dt,
+          temp,
+          code: closest.weather[0].id,
+          pop: Math.round((popVal ?? 0) * 100),
+        });
+      } else if (before) {
+        hourlyPoints.push({
+          dt,
+          temp: before.main.temp,
+          code: before.weather[0].id,
+          pop: Math.round((before.pop ?? 0) * 100),
+        });
+      } else if (after) {
+        hourlyPoints.push({
+          dt,
+          temp: after.main.temp,
+          code: after.weather[0].id,
+          pop: Math.round((after.pop ?? 0) * 100),
+        });
+      }
+    }
+  }
+
+  return hourlyPoints;
+}
+
+export function owmToDailyForecast(list: OwmForecastItem[], offsetSec: number): DailyForecast[] {
+  const groups: Record<string, OwmForecastItem[]> = {};
+  for (const item of list) {
+    const key = getLocalDateKey(item.dt, offsetSec);
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(item);
+  }
+
+  return Object.keys(groups).map((key) => {
+    const items = groups[key];
+    let noonItem = items[0];
+    let minDiff = Infinity;
+    for (const item of items) {
+      const d = toLocal(item.dt, offsetSec);
+      const hours = d.getUTCHours();
+      const diff = Math.abs(hours - 12);
+      if (diff < minDiff) {
+        minDiff = diff;
+        noonItem = item;
+      }
+    }
+
+    const temps = items.map((item) => item.main.temp);
+    const minTemps = items.map((item) => item.main.temp_min);
+    const maxTemps = items.map((item) => item.main.temp_max);
+
+    return {
+      key,
+      dt: noonItem.dt + offsetSec,
+      code: noonItem.weather[0].id,
+      condition: noonItem.weather[0].description,
+      min: Math.round(Math.min(...temps, ...minTemps)),
+      max: Math.round(Math.max(...temps, ...maxTemps)),
+    };
+  });
+}
+
+function getLocalDateKey(unixUTC: number, offsetSec: number) {
+  const d = toLocal(unixUTC, offsetSec);
+  const y = d.getUTCFullYear();
+  const m = String(d.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(d.getUTCDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
