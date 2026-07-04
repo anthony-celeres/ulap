@@ -95,6 +95,8 @@ export default function Home() {
         detailRef.current = opts?.detail ?? null;
       }
       const displayName = cityRef.current || payload.current.name;
+      const fullInputLabel = detailRef.current ? `${displayName}, ${detailRef.current}` : displayName;
+      
       setCurrent(payload.current);
       setHourlyAll(payload.hourly);
       setDays(payload.days);
@@ -102,15 +104,15 @@ export default function Home() {
       setOtherCities(payload.cities);
       setCity(displayName);
       setCityDetail(detailRef.current);
-      setInputCity(displayName);
+      setInputCity(fullInputLabel);
       if (!opts?.silent) setSelectedDay(0);
       hasDataRef.current = true;
       setStaleLabel(null);
       updatedAtRef.current = Date.now();
       setUpdatedAt(updatedAtRef.current);
-      setAnnouncement(`Weather for ${displayName} updated`);
+      setAnnouncement(`Weather for ${fullInputLabel} updated`);
       try {
-        localStorage.setItem(LAST_CITY_KEY, displayName);
+        localStorage.setItem(LAST_CITY_KEY, fullInputLabel);
         // Keep a last-known copy so the app still shows weather offline.
         localStorage.setItem(
           PAYLOAD_KEY,
@@ -153,19 +155,22 @@ export default function Home() {
             setOtherCities(payload.cities);
             cityRef.current = label ?? payload.current.name;
             detailRef.current = detail ?? null;
+            const fullInputLabel = detailRef.current ? `${cityRef.current}, ${detailRef.current}` : cityRef.current;
             setCity(cityRef.current);
             setCityDetail(detailRef.current);
-            setInputCity(cityRef.current);
+            setInputCity(fullInputLabel);
             hasDataRef.current = true;
             setStaleLabel(new Date(at).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }));
-            setAnnouncement(`Offline — showing saved weather for ${payload.current.name}`);
+            setAnnouncement(`Offline — showing saved weather for ${cityRef.current}`);
             return;
           }
         } catch {
           // corrupt cache — fall through to the error state
         }
       }
-      setError(err instanceof Error ? err.message : "Failed to fetch weather.");
+      // A silent background refresh that fails (e.g. the network briefly
+      // dropped) should leave the last-shown data in place, not raise an alarm.
+      if (!opts?.silent) setError(err instanceof Error ? err.message : "Failed to fetch weather.");
     } finally {
       if (abortRef.current === ac) setLoading(false);
     }
@@ -252,7 +257,22 @@ export default function Home() {
       return;
     }
     navigator.geolocation.getCurrentPosition(
-      (pos) => fetchWeatherData({ lat: pos.coords.latitude, lon: pos.coords.longitude }),
+      async (pos) => {
+        const coords = { lat: pos.coords.latitude, lon: pos.coords.longitude };
+        try {
+          const r = await fetch(`/api/geocode?lat=${coords.lat}&lon=${coords.lon}`);
+          if (r.ok) {
+            const list: GeoSuggestion[] = await r.json();
+            if (list.length > 0) {
+              fetchWeatherData(coords, { label: list[0].name, detail: list[0].state });
+              return;
+            }
+          }
+        } catch {
+          // ignore reverse-geocoding error and fall back to coordinate search directly
+        }
+        fetchWeatherData(coords);
+      },
       () => setError("Couldn't get your location — allow location access and try again.")
     );
   }, [fetchWeatherData]);
@@ -304,7 +324,7 @@ export default function Home() {
         onSearch={handleSearch}
         onSelectLocation={handleSelectLocation}
         onLocate={handleLocate}
-        onRefresh={() => current && fetchWeatherData({ lat: current.coord.lat, lon: current.coord.lon }, { silent: true })}
+        onRefresh={() => current && fetchWeatherData({ lat: current.coord.lat, lon: current.coord.lon }, { label: cityRef.current, detail: detailRef.current ?? undefined })}
       />
 
       {error && current && (
@@ -430,7 +450,7 @@ export default function Home() {
                   onClick={() => setView("week")}
                   disabled={days.length < 2}
                 >
-                  Next 6 days
+                  {weekDays.length}-day forecast
                 </button>
               </div>
               <div className="flex-1 min-h-0">
