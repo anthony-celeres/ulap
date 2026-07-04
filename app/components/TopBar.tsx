@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Clock, Cloud, LocateFixed, MapPin, Moon, RefreshCw, Search, Sun } from "lucide-react";
+import Link from "next/link";
+import { Clock, Cloud, Info, LocateFixed, MapPin, Moon, RefreshCw, Search, Sun } from "lucide-react";
 import { useTheme } from "../hooks/useTheme";
 import type { GeoSuggestion } from "../types/weather";
 
@@ -261,6 +262,9 @@ export default function TopBar({
         >
           {theme === "dark" ? <Sun size={18} aria-hidden="true" /> : <Moon size={18} aria-hidden="true" />}
         </button>
+        <Link href="/about" className={iconButtonClass} aria-label="About ulap" title="About ulap">
+          <Info size={18} aria-hidden="true" />
+        </Link>
       </div>
     </header>
   );

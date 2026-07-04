@@ -42,6 +42,7 @@ export default function Home() {
   const [cityDetail, setCityDetail] = useState<string | null>(null);
   const [inputCity, setInputCity] = useState("");
   const [current, setCurrent] = useState<CurrentWeather | null>(null);
+  const [observedAt, setObservedAt] = useState<number | null>(null);
   const [days, setDays] = useState<DailyForecast[]>([]);
   const [hourlyAll, setHourlyAll] = useState<HourlyPoint[]>([]);
   const [air, setAir] = useState<AirQuality | null>(null);
@@ -98,6 +99,7 @@ export default function Home() {
       const fullInputLabel = detailRef.current ? `${displayName}, ${detailRef.current}` : displayName;
       
       setCurrent(payload.current);
+      setObservedAt(payload.observedAt ?? null);
       setHourlyAll(payload.hourly);
       setDays(payload.days);
       setAir(payload.air);
@@ -149,6 +151,7 @@ export default function Home() {
               detail,
             }: { payload: WeatherPayload; at: number; label?: string; detail?: string | null } = JSON.parse(raw);
             setCurrent(payload.current);
+            setObservedAt(payload.observedAt ?? null);
             setHourlyAll(payload.hourly);
             setDays(payload.days);
             setAir(payload.air);
@@ -424,6 +427,7 @@ export default function Home() {
                 uv={currentUv}
                 sunrise={fmtTime(current.sys.sunrise, tz)}
                 sunset={fmtTime(current.sys.sunset, tz)}
+                asOf={observedAt ? fmtTime(observedAt, tz) : undefined}
               />
             </div>
 

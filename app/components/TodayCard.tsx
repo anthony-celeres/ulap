@@ -1,6 +1,6 @@
 "use client";
 
-import { MapPin, Sunrise, Sunset, TriangleAlert } from "lucide-react";
+import { Clock, Info, MapPin, Sunrise, Sunset, TriangleAlert } from "lucide-react";
 import { heatWarning, uvCategory } from "../utils/weather";
 import WeatherIcon from "./WeatherIcon";
 
@@ -22,6 +22,8 @@ interface TodayCardProps {
   uv?: number;
   sunrise: string;
   sunset: string;
+  /** Local time the shown reading is from, e.g. "12:30 PM". */
+  asOf?: string;
 }
 
 export default function TodayCard({
@@ -39,6 +41,7 @@ export default function TodayCard({
   uv,
   sunrise,
   sunset,
+  asOf,
 }: TodayCardProps) {
   const heat = heatWarning(realFeel);
   const uvInfo = uv !== undefined ? uvCategory(uv) : null;
@@ -106,6 +109,22 @@ export default function TodayCard({
           <Sunset size={15} className="text-orange-400" aria-hidden="true" /> {sunset}
         </span>
       </div>
+
+      {asOf && (
+        <div className="flex items-center gap-1.5 pt-3 text-xs text-muted border-t border-edge">
+          <Clock size={13} className="shrink-0" aria-hidden="true" />
+          <span>As of {asOf}</span>
+          <span
+            tabIndex={0}
+            role="note"
+            aria-label="Live forecast conditions refresh about every 15 minutes, so the reading can stay the same between refreshes."
+            title="Live forecast conditions refresh about every 15 minutes, so the reading can stay the same between refreshes."
+            className="inline-flex items-center cursor-help text-muted/80 outline-none"
+          >
+            <Info size={13} aria-hidden="true" />
+          </span>
+        </div>
+      )}
     </section>
   );
 }

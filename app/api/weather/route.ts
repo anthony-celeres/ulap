@@ -99,6 +99,9 @@ export async function GET(req: NextRequest) {
 
     let hourly: WeatherPayload["hourly"] = [];
     let days: WeatherPayload["days"] = [];
+    // When the shown conditions are from. Defaults to OWM's observation time;
+    // the primary path replaces it with Open-Meteo's nowcast timestamp below.
+    let observedAt = current.dt;
     if (omRes) {
       const om: OpenMeteoForecast = await omRes.json();
       hourly = toHourlyPoints(om);
@@ -121,6 +124,14 @@ export async function GET(req: NextRequest) {
             description: wmoDescription(om.current.weather_code),
           },
         ];
+        // om.current.time is local wall-clock (timezone=auto); shift back to a
+        // real UTC epoch so the client formats it with the location's offset.
+        // Open-Meteo aligns the nowcast to the next 15-min slot, which can land
+        // slightly ahead of "now" — cap it so "As of" never reads as the future.
+        if (om.current.time) {
+          const nowcast = Math.round(Date.parse(`${om.current.time}Z`) / 1000) - current.timezone;
+          observedAt = Math.min(nowcast, current.dt);
+        }
       }
     } else {
       try {
@@ -197,6 +208,7 @@ export async function GET(req: NextRequest) {
 
     const payload: WeatherPayload = {
       current,
+      observedAt,
       hourly,
       days,
       air,
