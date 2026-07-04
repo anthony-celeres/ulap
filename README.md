@@ -143,22 +143,24 @@ app/
 └── page.tsx                # Data fetching + dashboard layout
 ```
 
-## How it works
+## ⚙️ How it works
 
-1. **Data** — the client calls the app's own `/api/weather` route, which uses **OpenWeatherMap** to resolve the place (name, coordinates, timezone, sunrise/sunset), then in parallel fetches **Open-Meteo** for the current conditions *and* the forecast (hourly temperature / rain-probability / condition, 8 daily summaries, UV), OpenWeatherMap air pollution, and the nearby-cities strip (also Open-Meteo, in one multi-coordinate call). Everything is fetched live and returned as one payload. The dashboard silently revalidates every 10 minutes and on tab refocus, shows an "Updated X min ago" badge with a manual refresh, and an "As of" timestamp for the reading itself. If Open-Meteo is unreachable, the route falls back to OpenWeatherMap's own forecast.
-2. **One consistent model** — the current-conditions card and every forecast panel are driven by Open-Meteo, so the big temperature and the hourly strip / rain chart / daily view always agree. OpenWeatherMap is used only for the place metadata, air quality, and geocoding fallback.
-3. **Condition mapping** — Open-Meteo reports WMO weather codes; `wmoToIconCode()` maps them onto the OpenWeatherMap-style ids that `WeatherIcon` renders, so both sources share one icon system.
-4. **Theming** — all colors are CSS custom properties defined in `globals.css` for light and dark, mapped into Tailwind v4 via `@theme inline` so components use semantic utilities like `bg-surface` and `text-muted`. A tiny inline script in `layout.tsx` applies the saved theme before first paint.
-5. **Times** — upstream returns UTC timestamps plus a timezone offset; all displayed times are shifted into the *city's* local time, not the viewer's.
+- **Unified API Gateway** — The server-side `/api/weather` endpoint resolves place metadata, current conditions, forecasts, AQI, and regional city profiles in parallel.
+- **Consistent Model Fallback** — Uses **Open-Meteo** as the primary forecast engine. If Open-Meteo is down, it seamlessly falls back to **OpenWeatherMap** to ensure uptime.
+- **Smart Revalidation** — Auto-refreshes silently every 10 minutes and on page focus. Displays an "Updated X min ago" badge with manual refresh capabilities.
+- **Unified Icon Mapping** — Maps Open-Meteo WMO weather codes into standard OWM condition IDs, rendering them under one cohesive Lucide icon system.
+- **Local Time Offsets** — Automatically shifts UTC timestamps based on the searched city's timezone offset, displaying local time instead of the client's.
+- **No-Flash Theme Init** — Persists light/dark modes with an inline blocking script in `layout.tsx` to stop page flashing before the layout mounts.
 
-## Design decisions
+## 📐 Design decisions
 
-- **Neumorphic (soft-UI) design system** — surfaces share the page background and get their depth from paired light/dark shadows. Raised (`neu`, `neu-sm`) and inset (`neu-inset`, `neu-inset-sm`) utilities are defined once in `globals.css`; selection states are "pressed in" rather than outlined. Because neumorphism drops borders, keyboard focus rings and text contrast are deliberately strong.
-- **Fluid, screen-filling layout** — a 12-column grid up to 1800px wide reflows from a single column on phones to hero + forecast + chart / map + cities regions on desktop, so large screens are actually used.
-- **Live-first, cache-as-fallback** — online means real-time data (`no-store`); the last payload in `localStorage` is only shown when the network is unavailable, with a clearly-labeled offline banner.
-- **Semantic color tokens over hard-coded hex** — every component reads from the token palette, so dark mode is a single class flip on `<html>`.
-- **Errors don't wipe the screen** — a failed search shows a dismissible banner while the previous city's data stays visible; a full-page error appears only when there is nothing to show yet.
-- **Motion is minimal** — micro-transitions (≤150 ms) on hover/focus only, and everything is suppressed under `prefers-reduced-motion`.
+- **Neumorphic Consistency** — Card depths are molded directly from the background using matched light/dark shadow pairs (`neu` & `neu-inset`).
+- **Enhanced Soft-UI Accessibility** — Uses crisp borderlines (`border-edge/30`) to define elements alongside high-contrast text and focus rings.
+- **12-Column Responsive Grid** — Stretches to a fluid 1800px layout that adapts from clean vertical lists on mobile to a multi-panel dashboard on desktop.
+- **Offline Caching** — Fetches live weather (`no-store`) but caches responses in `localStorage` to serve an offline fallback banner during network dropouts.
+- **Persistent States** — Remembers the last searched city locally to load it immediately on returning visits.
+- **Non-Intrusive Error States** — Shows dismissible error banners without wiping current dashboard metrics.
+- **Reduced Motion** — Micro-transitions are kept under 150ms and respect the system's `prefers-reduced-motion` settings.
 
 ## Git workflow
 
