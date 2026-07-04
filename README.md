@@ -1,4 +1,48 @@
-# ☁️ ulap
+<div align="center">
+
+<img src="public/icon.png" alt="ulap logo" width="96" height="96" style="margin-bottom: 8px;" />
+
+# ulap
+
+**ulap** (Filipino for *"cloud"*) is a modern, open-source weather dashboard for the Philippines.
+
+<p>
+  <img src="https://img.shields.io/badge/platform-web-blue?style=flat-square" alt="Platform" />
+  <img src="https://img.shields.io/badge/Next.js-16%20%28App%20Router%29-000000?style=flat-square&logo=nextdotjs" alt="Next.js" />
+  <img src="https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react&logoColor=black" alt="React" />
+  <img src="https://img.shields.io/badge/Tailwind_CSS-v4-06B6D4?style=flat-square&logo=tailwindcss" alt="Tailwind CSS" />
+  <img src="https://img.shields.io/badge/TypeScript-5-3178C6?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript" />
+  <img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="License" />
+</p>
+
+A beautifully aggregated multi-source weather pipeline served through a premium **soft-UI (neumorphic)** interface.
+
+<br />
+
+<figure>
+  <img src="public/screenshot_hourly.png" alt="ulap Dashboard Hourly Forecast" width="100%" style="border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.15);" />
+  <figcaption style="margin-top: 8px; margin-bottom: 24px; color: #6b7280; font-size: 0.9em; font-style: italic;">
+    <strong>Hourly Forecast View</strong>: Tactile, clock-aligned forecast carousel separating AM/PM conditions for today.
+  </figcaption>
+</figure>
+
+<figure>
+  <img src="public/screenshot_daily.png" alt="ulap Dashboard 7-Day Forecast" width="100%" style="border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.15);" />
+  <figcaption style="margin-top: 8px; margin-bottom: 24px; color: #6b7280; font-size: 0.9em; font-style: italic;">
+    <strong>7-Day Weekly Forecast</strong>: Crisp, high-contrast outlook tracking daily condition profiles and temperature bounds.
+  </figcaption>
+</figure>
+
+<figure>
+  <img src="public/screenshot_bottom.png" alt="ulap Dashboard Maps and Charts" width="100%" style="border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.15);" />
+  <figcaption style="margin-top: 8px; color: #6b7280; font-size: 0.9em; font-style: italic;">
+    <strong>Analytics & Mapping</strong>: Interactive precipitation probability charts, theme-synchronized Leaflet mapping, and regional summaries.
+  </figcaption>
+</figure>
+
+</div>
+
+---
 
 **ulap** (Filipino for *"cloud"*) is an open-source weather dashboard for the Philippines — live conditions, a multi-day forecast, hourly rain probability, and air quality for any Philippine city.
 
