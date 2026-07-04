@@ -23,7 +23,7 @@ export default function WeekList({ days, popByDay, selectedDay, onSelect }: Week
   const span = Math.max(weekMax - weekMin, 1);
 
   return (
-    <div className="h-full flex flex-col justify-between gap-2" role="group" aria-label="Daily forecast">
+    <div className="h-full flex flex-col gap-3" role="group" aria-label="Daily forecast">
       {days.map((d, i) => {
         const selected = i === selectedDay;
         return (
@@ -33,7 +33,7 @@ export default function WeekList({ days, popByDay, selectedDay, onSelect }: Week
             onClick={() => onSelect(i)}
             aria-pressed={selected}
             title={`${d.condition}, high ${d.max}°, low ${d.min}°, ${Math.round(popByDay[i] ?? 0)}% rain`}
-            className={`w-full flex items-center gap-3 sm:gap-4 px-4 py-2.5 rounded-2xl border cursor-pointer transition-shadow duration-150 ${
+            className={`w-full flex-1 min-h-[52px] flex items-center gap-3 sm:gap-4 px-4 sm:px-5 py-3 sm:py-4 rounded-2xl border cursor-pointer transition-shadow duration-150 ${
               selected ? "border-accent neu-inset" : "border-edge neu-sm hover:border-accent"
             }`}
           >

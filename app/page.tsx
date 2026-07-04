@@ -18,7 +18,7 @@ import type {
   HourlyPoint,
   WeatherPayload,
 } from "./types/weather";
-import { findSevereHour, fmtHour, fmtTime, getDayName, msToKmh } from "./utils/weather";
+import { findSevereHour, fmtHour, fmtTime, getDayName, fmtDayAndDate, msToKmh } from "./utils/weather";
 
 const DEFAULT_CITY = "Manila";
 const LAST_CITY_KEY = "ulap-last-city";
@@ -352,7 +352,7 @@ export default function Home() {
       {!current && loading ? (
         <DashboardSkeleton />
       ) : !current ? (
-        <div className="flex flex-col items-center justify-center p-10 rounded-3xl neu">
+        <div className="flex flex-col items-center justify-center p-10 rounded-3xl bg-surface border border-edge/30 neu">
           <strong className="flex items-center gap-2 text-lg text-ink">
             <TriangleAlert size={20} className="text-amber-500" aria-hidden="true" /> Could not load weather
           </strong>
@@ -415,7 +415,7 @@ export default function Home() {
               <TodayCard
                 location={city}
                 locationDetail={cityDetail ?? undefined}
-                day={getDayName(current.dt, tz)}
+                day={fmtDayAndDate(current.dt, tz)}
                 time={fmtTime(current.dt, tz)}
                 code={current.weather[0].id}
                 condition={current.weather[0].description}
@@ -509,7 +509,7 @@ function DashboardSkeleton() {
 function MissingKeyNotice() {
   return (
     <main className="max-w-xl mx-auto p-8 min-h-screen flex items-center">
-      <div className="rounded-3xl neu p-8 w-full">
+      <div className="rounded-3xl bg-surface border border-edge/30 neu p-8 w-full">
         <h1 className="flex items-center gap-2 text-2xl font-bold mb-2">
           <Cloud size={28} className="text-accent" fill="currentColor" strokeWidth={0} aria-hidden="true" />
           <span className="text-gradient">ulap</span>

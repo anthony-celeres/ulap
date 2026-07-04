@@ -30,6 +30,13 @@ export default function RainChart({ data, temps }: RainChartProps) {
 
   return (
     <div className="relative flex-1 min-h-44 rounded-2xl neu-inset-sm p-4">
+      {/* Horizontal grid lines */}
+      <div className="absolute top-4 bottom-[38px] left-12 right-4 flex flex-col justify-between pointer-events-none" aria-hidden="true">
+        <div className="w-full border-t border-edge/10"></div>
+        <div className="w-full border-t border-dashed border-edge/10"></div>
+        <div className="w-full border-t border-edge/20"></div>
+      </div>
+
       <div className="absolute left-4 top-4 bottom-[34px] flex flex-col justify-between text-xs text-muted">
         <span>100%</span>
         <span>50%</span>
@@ -46,7 +53,7 @@ export default function RainChart({ data, temps }: RainChartProps) {
           <path
             d={tempPath}
             fill="none"
-            stroke="var(--accent)"
+            stroke="var(--temp-trend)"
             strokeWidth={2}
             strokeLinecap="round"
             strokeLinejoin="round"
