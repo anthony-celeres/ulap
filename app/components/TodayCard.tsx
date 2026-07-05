@@ -1,6 +1,6 @@
 "use client";
 
-import { Clock, Info, MapPin, Sunrise, Sunset, TriangleAlert } from "lucide-react";
+import { Clock, Info, MapPin, TriangleAlert } from "lucide-react";
 import { heatWarning, uvCategory } from "../utils/weather";
 import WeatherIcon from "./WeatherIcon";
 
@@ -20,8 +20,6 @@ interface TodayCardProps {
   humidity: number;
   /** Current UV index, when the forecast provides it. */
   uv?: number;
-  sunrise: string;
-  sunset: string;
   /** Local time the shown reading is from, e.g. "12:30 PM". */
   asOf?: string;
 }
@@ -39,8 +37,6 @@ export default function TodayCard({
   pressure,
   humidity,
   uv,
-  sunrise,
-  sunset,
   asOf,
 }: TodayCardProps) {
   const heat = heatWarning(realFeel);
@@ -109,16 +105,7 @@ export default function TodayCard({
         )}
       </dl>
 
-      <div className="flex items-center justify-between px-4 py-2.5 rounded-2xl bg-well/20 neu-inset-sm text-xs text-muted">
-        <span className="flex items-center gap-2">
-          <Sunrise size={14} className="text-amber-500 shrink-0" aria-hidden="true" />
-          <span>Sunrise: <span className="font-semibold text-ink">{sunrise}</span></span>
-        </span>
-        <span className="flex items-center gap-2">
-          <Sunset size={14} className="text-orange-400 shrink-0" aria-hidden="true" />
-          <span>Sunset: <span className="font-semibold text-ink">{sunset}</span></span>
-        </span>
-      </div>
+
 
       {asOf && (
         <div className="flex items-center gap-1.5 pt-3.5 text-xs text-muted border-t border-edge/25">

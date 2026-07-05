@@ -425,8 +425,6 @@ export default function Home() {
                 pressure={current.main.pressure}
                 humidity={current.main.humidity}
                 uv={currentUv}
-                sunrise={fmtTime(current.sys.sunrise, tz)}
-                sunset={fmtTime(current.sys.sunset, tz)}
                 asOf={observedAt ? fmtTime(observedAt, tz) : undefined}
               />
             </div>
