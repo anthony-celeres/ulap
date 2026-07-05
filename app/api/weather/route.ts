@@ -206,6 +206,36 @@ export async function GET(req: NextRequest) {
         .filter((c): c is CitySummary => c !== null);
     }
 
+    // Override sunny/partly-cloudy icons/conditions with rain if rain probability is high (>= 50%)
+    // to keep the interface intuitive and avoid confusing the user.
+    hourly = hourly.map((h) => {
+      if (h.pop >= 50 && (h.code === 800 || h.code === 801 || h.code === 802)) {
+        return { ...h, code: 500 }; // 500 = Light rain (CloudRain icon)
+      }
+      return h;
+    });
+
+    days = days.map((d, i) => {
+      const dayHours = hourly.slice(i * 24, i * 24 + 24);
+      const maxPop = dayHours.length > 0 ? Math.max(...dayHours.map((h) => h.pop)) : 0;
+      if (maxPop >= 50 && (d.code === 800 || d.code === 801 || d.code === 802)) {
+        return { ...d, code: 500, condition: "Showers" };
+      }
+      return d;
+    });
+
+    if (current && current.weather && current.weather[0]) {
+      const tz = current.timezone ?? 0;
+      const nowLocal = observedAt + tz;
+      const currentHour = hourly.find((h) => nowLocal >= h.dt && nowLocal < h.dt + 3600);
+      const curPop = currentHour ? currentHour.pop : 0;
+      const curCode = current.weather[0].id;
+      if (curPop >= 50 && (curCode === 800 || curCode === 801 || curCode === 802)) {
+        current.weather[0].id = 500;
+        current.weather[0].description = "Showers";
+      }
+    }
+
     const payload: WeatherPayload = {
       current,
       observedAt,

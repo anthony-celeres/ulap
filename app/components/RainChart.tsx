@@ -45,7 +45,7 @@ export default function RainChart({ data, temps }: RainChartProps) {
 
       {hasTemps && (
         <svg
-          className="absolute top-4 bottom-[38px] left-12 right-4 w-[calc(100%-4rem)] h-[calc(100%-3.4rem)] pointer-events-none"
+          className="absolute top-4 bottom-[38px] left-12 right-4 pointer-events-none"
           viewBox="0 0 100 100"
           preserveAspectRatio="none"
           aria-hidden="true"
