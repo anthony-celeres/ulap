@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="public/icon.png" alt="ulap logo" width="96" height="96" style="margin-bottom: 8px;" />
+<img src="public/logo.png" alt="ulap logo" width="96" height="96" style="margin-bottom: 8px;" />
 
 # ulap
 
