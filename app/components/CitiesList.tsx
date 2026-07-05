@@ -1,36 +1,41 @@
 "use client";
 
-interface CityData {
-  name: string;
-  country: string;
-  condition: string;
-  icon: string;
-  temp: number;
+import { ChevronRight } from "lucide-react";
+import type { CitySummary } from "../types/weather";
+import WeatherIcon from "./WeatherIcon";
+
+interface CitiesListProps {
+  cities: CitySummary[];
+  onSelect: (city: string) => void;
 }
 
-export default function CitiesList({ cities }: { cities: CityData[] }) {
+export default function CitiesList({ cities, onSelect }: CitiesListProps) {
   return (
-    <div className="cities-section">
-      <div className="flex items-center justify-between mb-3.5 cities-header">
-        <h3 className="text-sm font-semibold">Other large cities</h3>
-        <span className="text-xs text-[#7c3aed] cursor-pointer show-all">Show All ›</span>
-      </div>
+    <section aria-label="Around the Philippines" className="h-full flex flex-col">
+      <h3 className="text-sm font-semibold text-ink mb-4">Around the Philippines</h3>
 
-      <div className="flex flex-col gap-2">
-        {cities.map((city, idx) => (
-          <div key={idx} className="flex items-center justify-between p-3 px-4 bg-white border border-[#e2e8f0] rounded-xl city-card">
-            <div className="flex flex-col gap-0.5 city-info">
-              <span className="text-[11px] text-[#64748b] city-country">{city.country}</span>
-              <span className="text-sm font-semibold city-name">{city.name}</span>
-              <span className="text-[11px] text-[#64748b] city-cond">{city.condition}</span>
+      <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-1 gap-4">
+        {cities.map((city) => (
+          <button
+            key={city.name}
+            type="button"
+            onClick={() => onSelect(city.name)}
+            title={`Show weather for ${city.name}`}
+            className="w-full flex items-center justify-between gap-3 py-3 px-4 rounded-3xl border border-edge hover:border-accent neu-sm active:neu-inset-sm cursor-pointer text-left transition-shadow duration-150"
+          >
+            <div className="flex flex-col gap-0.5 min-w-0">
+              <span className="text-xs uppercase tracking-wide text-muted truncate">{city.country}</span>
+              <span className="text-sm font-semibold text-ink truncate">{city.name}</span>
+              <span className="text-xs text-muted truncate">{city.condition}</span>
             </div>
-            <div className="flex items-center gap-2 city-right">
-              <div className="text-[26px] city-icon">{city.icon}</div>
-              <div className="text-xl font-bold city-temp">{city.temp}°</div>
+            <div className="flex items-center gap-3 shrink-0">
+              <WeatherIcon code={city.code} size={30} className="shrink-0" />
+              <div className="text-xl font-bold text-ink shrink-0">{city.temp}°</div>
+              <ChevronRight size={16} className="text-muted shrink-0" aria-hidden="true" />
             </div>
-          </div>
+          </button>
         ))}
       </div>
-    </div>
+    </section>
   );
 }

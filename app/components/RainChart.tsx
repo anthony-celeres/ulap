@@ -1,33 +1,89 @@
 "use client";
 
-interface RainChartProps {
-  data: { time: string; height: number; active?: boolean }[];
+export interface RainPoint {
+  label: string;
+  /** Probability of precipitation, 0–100. */
+  pop: number;
 }
 
-export default function RainChart({ data }: RainChartProps) {
+interface RainChartProps {
+  data: RainPoint[];
+  /** Temperatures aligned with `data`, drawn as a trend line. */
+  temps?: number[];
+}
+
+/** Chart body only — ChartPanel provides the card, title, and controls. */
+export default function RainChart({ data, temps }: RainChartProps) {
+  const hasTemps = !!temps && temps.length === data.length && temps.length > 1;
+  let tempPath = "";
+  if (hasTemps) {
+    const tempMin = Math.min(...temps);
+    const span = Math.max(Math.max(...temps) - tempMin, 1);
+    tempPath = `M${temps
+      .map((t, i) => `${(i / (temps.length - 1)) * 100},${90 - ((t - tempMin) / span) * 80}`)
+      .join(" L")}`;
+  }
+
+  if (data.length === 0) {
+    return <p className="text-xs text-muted flex-1 flex items-center">No hourly data for this day.</p>;
+  }
+
   return (
-    <div className="rain-section">
-      <div className="text-sm font-semibold mb-3.5 section-title">Chance of rain</div>
-      <div className="relative h-40 rain-chart">
-        <div className="absolute left-0 top-0 bottom-[22px] flex flex-col justify-between text-[11px] text-[#64748b] rain-labels-y">
-          <span>Rainy</span>
-          <span>Sunny</span>
-          <span>Heavy</span>
-        </div>
-        <div className="absolute top-1/4 left-[50px] right-0 border-t border-dashed border-[#e2e8f0]"></div>
-        <div className="absolute top-[55%] left-[50px] right-0 border-t border-dashed border-[#e2e8f0]"></div>
-        
-        <div className="ml-[50px] flex items-end gap-2 h-[138px] rain-bars-wrap">
-          {data.map((item, idx) => (
-            <div key={idx} className="flex flex-col items-center gap-1 rain-bar-col">
-              <div 
-                className={`w-[22px] rounded-t-sm transition-[height] duration-300 rain-bar ${item.active ? 'bg-[#3b82f6]' : 'bg-[#cbd5e1]'}`} 
-                style={{ height: `${item.height}px` }}
+    <div className="relative flex-1 min-h-44 rounded-2xl neu-inset-sm p-4">
+      {/* Horizontal grid lines */}
+      <div className="absolute top-4 bottom-[38px] left-12 right-4 flex flex-col justify-between pointer-events-none" aria-hidden="true">
+        <div className="w-full border-t border-edge/10"></div>
+        <div className="w-full border-t border-dashed border-edge/10"></div>
+        <div className="w-full border-t border-edge/20"></div>
+      </div>
+
+      <div className="absolute left-4 top-4 bottom-[34px] flex flex-col justify-between text-xs text-muted">
+        <span>100%</span>
+        <span>50%</span>
+        <span>0%</span>
+      </div>
+
+      {hasTemps && (
+        <svg
+          className="absolute top-4 bottom-[38px] left-12 right-4 pointer-events-none"
+          viewBox="0 0 100 100"
+          preserveAspectRatio="none"
+          aria-hidden="true"
+        >
+          <path
+            d={tempPath}
+            fill="none"
+            stroke="var(--temp-trend)"
+            strokeWidth={2}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            vectorEffect="non-scaling-stroke"
+            opacity={0.85}
+          />
+        </svg>
+      )}
+      <div className="ml-8 flex gap-1 h-full">
+        {data.map((item, idx) => (
+          <div key={item.label} className="flex-1 min-w-0 flex flex-col">
+            <div className="relative flex-1">
+              <div
+                role="img"
+                aria-label={`${item.label}: ${item.pop}% chance of rain`}
+                title={`${item.pop}%`}
+                className="absolute bottom-0 left-1/2 -translate-x-1/2 w-3 rounded-full bg-hero-grad transition-[height] duration-150"
+                style={{ height: `${Math.max(item.pop, 4)}%`, opacity: item.pop >= 40 ? 1 : 0.35 }}
               ></div>
-              <span className="text-[10px] text-[#64748b] rain-time">{item.time}</span>
             </div>
-          ))}
-        </div>
+            {/* labels overflow their narrow columns, so render every other one */}
+            <div className="relative h-[18px]">
+              {idx % 2 === 0 && (
+                <span className="absolute top-1 left-1/2 -translate-x-1/2 text-xs text-muted whitespace-nowrap">
+                  {item.label}
+                </span>
+              )}
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );

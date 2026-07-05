@@ -1,45 +1,162 @@
 @import "tailwindcss";
 
+/* Dark mode is class-based: `.dark` is set on <html> by the theme script/toggle. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/*
+ * Neumorphic (soft-UI) design system.
+ * Surfaces share the page background; depth comes from paired
+ * light/dark shadows (raised) or their inset variants (pressed/wells).
+ */
 :root {
-  --bg: #f8fafc;
-  --surface: #ffffff;
-  --card: #ffffff;
-  --border: #e2e8f0;
-  --accent: #7c3aed;
-  --accent2: #3b82f6;
-  --text: #0f172a;
-  --muted: #64748b;
-  --bar: #e2e8f0;
-  --bar-fill: #cbd5e1;
-  --highlight: #f1f5f9;
-  --rain-bar: #cbd5e1;
-  --card-today: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+  --bg: #e3e9f2;
+  --surface: #e3e9f2;
+  --well: #d6deea;
+  --shadow-dark: rgba(163, 177, 198, 0.5);
+  --shadow-light: rgba(255, 255, 255, 0.8);
+  --text: #2b3442;
+  --muted: #5f6b7c;
+  --accent: #2f7cf6;
+  --accent2: #38bdf8;
+  --temp-trend: #f97316;
+  --hero-grad: linear-gradient(135deg, #58a6ff 0%, #2f7cf6 100%);
+  /* Soft outline for interactive surfaces — shadows alone don't meet
+     WCAG 1.4.11 non-text contrast. */
+  --edge: rgba(95, 107, 124, 0.45);
 }
 
 .dark {
-  --bg: #0f172a;
-  --surface: #1e293b;
-  --card: #1e293b;
-  --border: #334155;
-  --accent: #a78bfa;
-  --accent2: #60a5fa;
-  --text: #f8fafc;
-  --muted: #94a3b8;
-  --bar: #334155;
-  --bar-fill: #475569;
-  --highlight: #1e293b;
-  --rain-bar: #334155;
+  --bg: #242832;
+  --surface: #242832;
+  --well: #1e222b;
+  --shadow-dark: rgba(9, 11, 16, 0.45);
+  --shadow-light: rgba(62, 70, 88, 0.32);
+  --text: #e8edf5;
+  --muted: #98a4b8;
+  --accent: #5b9dff;
+  --accent2: #4cc9f0;
+  --temp-trend: #fb923c;
+  --hero-grad: linear-gradient(135deg, #3d7ff0 0%, #1e4fae 100%);
+  --edge: rgba(152, 164, 184, 0.4);
+}
+
+/* Extra-small breakpoint for very narrow phones. */
+@theme {
+  --breakpoint-xs: 25rem;
+}
+
+/* Map tokens into Tailwind so components use semantic utilities
+   (bg-surface, text-muted, …) that flip with the theme. */
+@theme inline {
+  --color-app: var(--bg);
+  --color-surface: var(--surface);
+  --color-well: var(--well);
+  --color-ink: var(--text);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-accent2: var(--accent2);
+  --color-temp-trend: var(--temp-trend);
+  --color-edge: var(--edge);
+}
+
+/* Raised surfaces — kept shallow for a minimal, near-flat softness. */
+@utility neu {
+  box-shadow:
+    5px 5px 12px var(--shadow-dark),
+    -5px -5px 12px var(--shadow-light);
+}
+@utility neu-sm {
+  box-shadow:
+    3px 3px 7px var(--shadow-dark),
+    -3px -3px 7px var(--shadow-light);
+}
+
+/* Pressed / recessed surfaces */
+@utility neu-inset {
+  box-shadow:
+    inset 4px 4px 9px var(--shadow-dark),
+    inset -4px -4px 9px var(--shadow-light);
+}
+@utility neu-inset-sm {
+  box-shadow:
+    inset 2px 2px 5px var(--shadow-dark),
+    inset -2px -2px 5px var(--shadow-light);
+}
+
+@utility bg-hero-grad {
+  background-image: var(--hero-grad);
+}
+
+/* Scroll strips rely on arrow buttons; the native scrollbar would break the
+   soft-UI look. Plain selectors so every browser engine is covered. */
+.no-scrollbar {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* legacy Edge */
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none; /* WebKit */
+  width: 0;
+  height: 0;
+}
+
+@utility text-gradient {
+  background-image: var(--hero-grad);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
 }
 
 body {
   background: var(--bg);
   color: var(--text);
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
   min-height: 100vh;
 }
 
-@theme inline {
-  --color-accent: var(--accent);
-  --color-accent2: var(--accent2);
+/* Neumorphism drops borders, so a visible keyboard focus ring is essential. */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 8px;
+}
+
+::selection {
+  background: var(--accent);
+  color: #fff;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Custom styles for Leaflet map to fix tile gaps and style attribution font */
+.leaflet-container {
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif !important;
+}
+
+.leaflet-control-attribution,
+.leaflet-control-attribution a {
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif !important;
+  font-size: 10px !important;
+  color: var(--muted) !important;
+}
+
+.leaflet-control-attribution {
+  background: var(--well) !important;
+  border-radius: 4px;
+  padding: 0 4px;
+  opacity: 0.85;
+}
+
+/* Fix browser-scaling subpixel tile gaps (ugly lines showing between map tiles) */
+.leaflet-tile-container img,
+.leaflet-tile {
+  outline: 1px solid transparent;
 }
 

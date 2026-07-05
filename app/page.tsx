@@ -1,160 +1,541 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Cloud, MapPin, TriangleAlert, WifiOff, X } from "lucide-react";
 import TopBar from "./components/TopBar";
 import TodayCard from "./components/TodayCard";
-import ForecastCard from "./components/ForecastCard";
-import RainChart from "./components/RainChart";
+import WeekList from "./components/WeekList";
+import HourlyStrip from "./components/HourlyStrip";
+import ChartPanel from "./components/ChartPanel";
 import MapSection from "./components/MapSection";
 import CitiesList from "./components/CitiesList";
-import { iconFromCode, fmtTime, getDayName, getShortDay } from "./utils/weather";
+import type {
+  AirQuality,
+  CitySummary,
+  CurrentWeather,
+  DailyForecast,
+  GeoSuggestion,
+  HourlyPoint,
+  WeatherPayload,
+} from "./types/weather";
+import { findSevereHour, fmtHour, fmtTime, getDayName, fmtDayAndDate, msToKmh } from "./utils/weather";
 
-const API_KEY = process.env.NEXT_PUBLIC_OPENWEATHER_API_KEY;
-const BASE_URL = "https://api.openweathermap.org/data/2.5";
+const DEFAULT_CITY = "Manila";
+const LAST_CITY_KEY = "ulap-last-city";
+const PAYLOAD_KEY = "ulap-last-payload";
+const RECENTS_KEY = "ulap-recents";
+const GEO_ASKED_KEY = "ulap-geo-asked";
+/** Weather observations refresh roughly every 10 minutes upstream. */
+const REFRESH_MS = 10 * 60 * 1000;
 
-const FIXED_CITIES = [
-  { name: "California", country: "US" },
-  { name: "Beijing", country: "CN" },
-  { name: "Jerusalem", country: "IL" },
-];
+type Query = string | { lat: number; lon: number };
+type Panel = "rain" | "air";
+/** Google Weather-style views: hourly today, or the next days at a glance. */
+type View = "today" | "week";
+
+function queryToParams(q: Query) {
+  return typeof q === "string" ? `q=${encodeURIComponent(q)}` : `lat=${q.lat}&lon=${q.lon}`;
+}
 
 export default function Home() {
-  const [city, setCity] = useState("Seattle");
-  const [inputCity, setInputCity] = useState("Seattle");
-  const [weatherData, setWeatherData] = useState<any>(null);
-  const [forecastData, setForecastData] = useState<any[]>([]);
-  const [otherCities, setOtherCities] = useState<any[]>([]);
+  const [city, setCity] = useState("");
+  const [cityDetail, setCityDetail] = useState<string | null>(null);
+  const [inputCity, setInputCity] = useState("");
+  const [current, setCurrent] = useState<CurrentWeather | null>(null);
+  const [observedAt, setObservedAt] = useState<number | null>(null);
+  const [days, setDays] = useState<DailyForecast[]>([]);
+  const [hourlyAll, setHourlyAll] = useState<HourlyPoint[]>([]);
+  const [air, setAir] = useState<AirQuality | null>(null);
+  const [otherCities, setOtherCities] = useState<CitySummary[]>([]);
+  const [selectedDay, setSelectedDay] = useState(0);
+  const [view, setView] = useState<View>("today");
+  const [panel, setPanel] = useState<Panel>("rain");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [missingKey, setMissingKey] = useState(false);
+  const [updatedAt, setUpdatedAt] = useState<number | null>(null);
+  const [announcement, setAnnouncement] = useState("");
+  const [staleLabel, setStaleLabel] = useState<string | null>(null);
+  const [askGeo, setAskGeo] = useState(false);
 
-  const fetchWeatherData = useCallback(async (searchCity: string) => {
-    setLoading(true);
+  const abortRef = useRef<AbortController | null>(null);
+  const updatedAtRef = useRef(0);
+  const hasDataRef = useRef(false);
+  // Current display name/address, readable inside silent refreshes.
+  const cityRef = useRef("");
+  const detailRef = useRef<string | null>(null);
+
+  const fetchWeatherData = useCallback(async (query: Query, opts?: { silent?: boolean; label?: string; detail?: string }) => {
+    // A newer request supersedes any in-flight one.
+    abortRef.current?.abort();
+    const ac = new AbortController();
+    abortRef.current = ac;
+    if (!opts?.silent) setLoading(true);
     setError(null);
     try {
-      // Current Weather
-      const curRes = await fetch(`${BASE_URL}/weather?q=${searchCity}&units=metric&appid=${API_KEY}`);
-      if (!curRes.ok) throw new Error("City not found");
-      const curData = await curRes.json();
-      setWeatherData(curData);
-      setCity(curData.name);
-
-      // 5-day Forecast (Free tier doesn't have 7-day, using 5-day / 3-hour chunks)
-      const forRes = await fetch(`${BASE_URL}/forecast?q=${searchCity}&units=metric&appid=${API_KEY}`);
-      if (forRes.ok) {
-        const forData = await forRes.json();
-        // Group by day (approximate daily forecast from 3-hourly data)
-        const daily = forData.list.filter((_: any, i: number) => i % 8 === 0).slice(1, 7);
-        setForecastData(daily);
+      const res = await fetch(`/api/weather?${queryToParams(query)}`, { signal: ac.signal });
+      if (!res.ok) {
+        const body: { error?: string } = await res.json().catch(() => ({}));
+        if (body.error === "missing_key") {
+          setMissingKey(true);
+          return;
+        }
+        throw new Error(
+          res.status === 404
+            ? "City not found — check the spelling and try again."
+            : "The weather service is unavailable right now — please try again."
+        );
       }
-
-      // Fetch other cities in parallel
-      const others = await Promise.all(
-        FIXED_CITIES.map(async (f) => {
-          const r = await fetch(`${BASE_URL}/weather?q=${f.name}&units=metric&appid=${API_KEY}`);
-          if (r.ok) {
-            const d = await r.json();
-            return {
-              name: f.name,
-              country: f.country,
-              condition: d.weather[0].main,
-              icon: iconFromCode(d.weather[0].id),
-              temp: Math.round(d.main.temp),
-            };
+      const payload: WeatherPayload = await res.json();
+      // A geocoded pick (e.g. a barangay) keeps its own name and address on
+      // display — the weather API would otherwise rename it to the nearest
+      // station. Silent refreshes keep whatever is already shown.
+      const renaming = !opts?.silent || !!opts?.label;
+      if (renaming) {
+        cityRef.current = opts?.label ?? payload.current.name;
+        detailRef.current = opts?.detail ?? null;
+      }
+      const displayName = cityRef.current || payload.current.name;
+      const fullInputLabel = detailRef.current ? `${displayName}, ${detailRef.current}` : displayName;
+      
+      setCurrent(payload.current);
+      setObservedAt(payload.observedAt ?? null);
+      setHourlyAll(payload.hourly);
+      setDays(payload.days);
+      setAir(payload.air);
+      setOtherCities(payload.cities);
+      setCity(displayName);
+      setCityDetail(detailRef.current);
+      setInputCity(fullInputLabel);
+      if (!opts?.silent) setSelectedDay(0);
+      hasDataRef.current = true;
+      setStaleLabel(null);
+      updatedAtRef.current = Date.now();
+      setUpdatedAt(updatedAtRef.current);
+      setAnnouncement(`Weather for ${fullInputLabel} updated`);
+      try {
+        localStorage.setItem(LAST_CITY_KEY, fullInputLabel);
+        // Keep a last-known copy so the app still shows weather offline.
+        localStorage.setItem(
+          PAYLOAD_KEY,
+          JSON.stringify({ payload, at: Date.now(), label: displayName, detail: detailRef.current })
+        );
+        if (renaming) {
+          const raw = localStorage.getItem(RECENTS_KEY);
+          const list: { name: string; state?: string; lat: number; lon: number }[] = raw ? JSON.parse(raw) : [];
+          const next = [
+            {
+              name: displayName,
+              state: detailRef.current ?? undefined,
+              lat: payload.current.coord.lat,
+              lon: payload.current.coord.lon,
+            },
+            ...list.filter((r) => r.name !== displayName),
+          ].slice(0, 5);
+          localStorage.setItem(RECENTS_KEY, JSON.stringify(next));
+        }
+      } catch {
+        // storage unavailable — skip persistence
+      }
+    } catch (err) {
+      if (err instanceof DOMException && err.name === "AbortError") return;
+      // Network failure with nothing on screen: fall back to the last-known copy.
+      if (!hasDataRef.current) {
+        try {
+          const raw = localStorage.getItem(PAYLOAD_KEY);
+          if (raw) {
+            const {
+              payload,
+              at,
+              label,
+              detail,
+            }: { payload: WeatherPayload; at: number; label?: string; detail?: string | null } = JSON.parse(raw);
+            setCurrent(payload.current);
+            setObservedAt(payload.observedAt ?? null);
+            setHourlyAll(payload.hourly);
+            setDays(payload.days);
+            setAir(payload.air);
+            setOtherCities(payload.cities);
+            cityRef.current = label ?? payload.current.name;
+            detailRef.current = detail ?? null;
+            const fullInputLabel = detailRef.current ? `${cityRef.current}, ${detailRef.current}` : cityRef.current;
+            setCity(cityRef.current);
+            setCityDetail(detailRef.current);
+            setInputCity(fullInputLabel);
+            hasDataRef.current = true;
+            setStaleLabel(new Date(at).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }));
+            setAnnouncement(`Offline — showing saved weather for ${cityRef.current}`);
+            return;
           }
-          return null;
-        })
-      );
-      setOtherCities(others.filter(Boolean));
-    } catch (err: any) {
-      setError(err.message || "Failed to fetch weather");
+        } catch {
+          // corrupt cache — fall through to the error state
+        }
+      }
+      // A silent background refresh that fails (e.g. the network briefly
+      // dropped) should leave the last-shown data in place, not raise an alarm.
+      if (!opts?.silent) setError(err instanceof Error ? err.message : "Failed to fetch weather.");
     } finally {
-      setLoading(false);
+      if (abortRef.current === ac) setLoading(false);
     }
   }, []);
 
+  const dismissGeo = useCallback(() => {
+    setAskGeo(false);
+    try {
+      localStorage.setItem(GEO_ASKED_KEY, "1");
+    } catch {
+      // storage unavailable — the offer just reappears next visit
+    }
+  }, []);
+
+  // Keep the data fresh: silent refetch on an interval and on tab refocus.
   useEffect(() => {
-    fetchWeatherData(city);
+    if (!current) return;
+    const coords = { lat: current.coord.lat, lon: current.coord.lon };
+    const refresh = () => fetchWeatherData(coords, { silent: true });
+    const id = setInterval(refresh, REFRESH_MS);
+    const onVisible = () => {
+      if (document.visibilityState === "visible" && Date.now() - updatedAtRef.current > REFRESH_MS) {
+        refresh();
+      }
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      clearInterval(id);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [current, fetchWeatherData]);
+
+  const handleSearch = useCallback(
+    async (newCity: string) => {
+      const q = newCity.trim();
+      if (!q) return;
+      // Resolve through the geocoder first so barangay-level names work;
+      // the plain name lookup remains as a fallback.
+      try {
+        const r = await fetch(`/api/geocode?q=${encodeURIComponent(q)}`);
+        if (r.ok) {
+          const list: GeoSuggestion[] = await r.json();
+          if (list.length > 0) {
+            fetchWeatherData({ lat: list[0].lat, lon: list[0].lon }, { label: list[0].name, detail: list[0].state });
+            return;
+          }
+        }
+      } catch {
+        // geocoder unreachable — fall through to the name lookup
+      }
+      fetchWeatherData(q);
+    },
+    [fetchWeatherData]
+  );
+
+  const handleSelectLocation = useCallback(
+    (place: GeoSuggestion) => {
+      fetchWeatherData({ lat: place.lat, lon: place.lon }, { label: place.name, detail: place.state });
+    },
+    [fetchWeatherData]
+  );
+
+  // Initial load goes through the geocoder too, so the saved or default
+  // city comes back with its full address.
+  useEffect(() => {
+    let saved: string | null = null;
+    let geoAsked = true;
+    try {
+      saved = localStorage.getItem(LAST_CITY_KEY);
+      geoAsked = localStorage.getItem(GEO_ASKED_KEY) !== null;
+    } catch {
+      // storage unavailable — fall back to the default city
+    }
+    if (!saved && !geoAsked) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time first-visit setup on mount
+      setAskGeo(true);
+    }
+    handleSearch(saved || DEFAULT_CITY);
+  }, [handleSearch]);
+
+  const handleLocate = useCallback(() => {
+    if (!navigator.geolocation) {
+      setError("Geolocation is not supported by this browser.");
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const coords = { lat: pos.coords.latitude, lon: pos.coords.longitude };
+        try {
+          const r = await fetch(`/api/geocode?lat=${coords.lat}&lon=${coords.lon}`);
+          if (r.ok) {
+            const list: GeoSuggestion[] = await r.json();
+            if (list.length > 0) {
+              fetchWeatherData(coords, { label: list[0].name, detail: list[0].state });
+              return;
+            }
+          }
+        } catch {
+          // ignore reverse-geocoding error and fall back to coordinate search directly
+        }
+        fetchWeatherData(coords);
+      },
+      () => setError("Couldn't get your location — allow location access and try again.")
+    );
   }, [fetchWeatherData]);
 
-  const handleSearch = (newCity: string) => {
-    if (newCity.trim()) {
-      fetchWeatherData(newCity);
-    }
-  };
-
-  if (loading && !weatherData) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-[#f8fafc]">
-        <div className="w-10 h-10 border-4 border-[#e2e8f0] border-t-[#7c3aed] rounded-full animate-spin"></div>
-        <p className="mt-4 text-[#64748b] text-sm font-medium">Fetching weather data...</p>
-      </div>
-    );
+  if (missingKey) {
+    return <MissingKeyNotice />;
   }
 
+  const tz = current?.timezone ?? 0;
+  const nowLocal = current ? current.dt + tz : 0;
+  const selected = days[selectedDay];
+  // Open-Meteo hours are calendar-aligned: 24 entries per local day.
+  const todayHours = hourlyAll.slice(0, 24);
+  const chartHours = hourlyAll.slice(selectedDay * 24, selectedDay * 24 + 24).filter((_, i) => i % 3 === 0);
+  const rainData = chartHours.map((h) => ({ label: fmtHour(h.dt, 0), pop: Math.round(h.pop) }));
+  const chartTemps = chartHours.map((h) => h.temp);
+  const selectedDayName =
+    selectedDay === 0 ? "Today" : selectedDay === 1 ? "Tomorrow" : selected ? getDayName(selected.dt, 0) : "";
+  const weekDays = days.slice(0, 7);
+  const popByDay = weekDays.map((_, i) =>
+    Math.max(0, ...hourlyAll.slice(i * 24, i * 24 + 24).map((h) => h.pop))
+  );
+
+  // Current-hour UV and any severe weather in the next 24 hours.
+  const currentUv = hourlyAll.find((h) => nowLocal >= h.dt && nowLocal < h.dt + 3600)?.uv;
+  const severe = current ? findSevereHour(hourlyAll.slice(0, 48), nowLocal) : null;
+  const severeLabel = severe
+    ? `${severe.code >= 200 && severe.code < 300 ? "Thunderstorm" : "Heavy rain"} expected around ${fmtHour(severe.dt, 0)} ${
+        severe.dt < (todayHours[23]?.dt ?? 0) + 3600 ? "today" : "tomorrow"
+      }`
+    : "";
+
+  const dayTabClass = (active: boolean) =>
+    `px-4 py-1.5 rounded-full text-sm cursor-pointer transition-shadow duration-150 ${
+      active ? "neu-sm font-semibold text-accent" : "font-medium text-muted hover:text-ink"
+    }`;
+
   return (
-    <main className="max-w-6xl mx-auto p-5 md:p-8">
-      <TopBar city={city} onSearch={handleSearch} onCityInput={setInputCity} inputCity={inputCity} />
+    <main className="w-full max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-10 py-6" aria-busy={loading}>
+      {/* Announces search/refresh results to assistive tech. */}
+      <p role="status" aria-live="polite" className="sr-only">
+        {announcement}
+      </p>
+      <TopBar
+        inputCity={inputCity}
+        loading={loading}
+        updatedAt={updatedAt}
+        onCityInput={setInputCity}
+        onSearch={handleSearch}
+        onSelectLocation={handleSelectLocation}
+        onLocate={handleLocate}
+        onRefresh={() => current && fetchWeatherData({ lat: current.coord.lat, lon: current.coord.lon }, { label: cityRef.current, detail: detailRef.current ?? undefined })}
+      />
 
-      <div className="flex items-center gap-1.5 mb-5 overflow-x-auto whitespace-nowrap">
-        <div className="px-3.5 py-1.5 rounded-lg text-sm font-medium text-[#64748b] cursor-pointer">Today</div>
-        <div className="px-3.5 py-1.5 rounded-lg text-sm font-medium text-[#64748b] cursor-pointer">Tomorrow</div>
-        <div className="px-3.5 py-1.5 rounded-lg text-sm font-semibold text-[#0f172a] cursor-pointer">Next 5 days</div>
-        <div className="ml-auto flex gap-1 bg-white border border-[#e2e8f0] p-1 rounded-lg">
-          <button className="px-3.5 py-1.5 rounded-md text-[12px] font-medium bg-[#7c3aed] text-white">Forecast</button>
-          <button className="px-3.5 py-1.5 rounded-md text-[12px] font-medium text-[#64748b]">Air quality</button>
-        </div>
-      </div>
-
-      {error ? (
-        <div className="flex flex-col items-center justify-center p-10 bg-red-50 border border-red-200 rounded-2xl text-red-800">
-          <strong className="text-lg">⚠️ Could not load weather</strong>
-          <span className="mt-1 text-sm">{error}</span>
-          <button onClick={() => fetchWeatherData(inputCity)} className="mt-4 bg-red-600 text-white px-5 py-2 rounded-lg text-sm font-semibold hover:bg-red-700 transition-colors">Try again</button>
-        </div>
-      ) : weatherData && (
-        <div className="space-y-5">
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr_220px] gap-5">
-            {/* Forecast Strip */}
-            <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] lg:grid-cols-[220px_repeat(5,1fr)] gap-2.5">
-              <TodayCard
-                day={getDayName(weatherData.dt, weatherData.timezone)}
-                time={fmtTime(weatherData.dt, weatherData.timezone)}
-                icon={iconFromCode(weatherData.weather[0].id)}
-                temp={Math.round(weatherData.main.temp)}
-                realFeel={Math.round(weatherData.main.feels_like)}
-                wind={`${weatherData.wind.speed} km/h`}
-                pressure={weatherData.main.pressure}
-                humidity={weatherData.main.humidity}
-                sunrise={fmtTime(weatherData.sys.sunrise, weatherData.timezone)}
-                sunset={fmtTime(weatherData.sys.sunset, weatherData.timezone)}
-              />
-              {forecastData.map((d, i) => (
-                <ForecastCard
-                  key={i}
-                  dayName={getShortDay(d.dt, weatherData.timezone)}
-                  icon={iconFromCode(d.weather[0].id)}
-                  temp={Math.round(d.main.temp)}
-                />
-              ))}
-            </div>
-
-            {/* Rain Chart (Simulated with real chance if available, or static for design) */}
-            <RainChart data={[
-              { time: "10AM", height: 55 },
-              { time: "11AM", height: 75, active: true },
-              { time: "12AM", height: 100, active: true },
-              { time: "01PM", height: 110, active: true },
-              { time: "02PM", height: 95, active: true },
-              { time: "03PM", height: 120, active: true },
-            ]} />
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr_260px] gap-5">
-            <MapSection city={city} />
-            <CitiesList cities={otherCities} />
-          </div>
+      {error && current && (
+        <div
+          role="alert"
+          className="flex items-center justify-between gap-3 mb-6 px-5 py-3 rounded-2xl neu-sm text-sm text-red-600 dark:text-red-400"
+        >
+          <span className="flex items-center gap-2">
+            <TriangleAlert size={16} aria-hidden="true" /> {error}
+          </span>
+          <button
+            type="button"
+            onClick={() => setError(null)}
+            aria-label="Dismiss error"
+            className="cursor-pointer hover:opacity-70"
+          >
+            <X size={16} aria-hidden="true" />
+          </button>
         </div>
       )}
+
+      {!current && loading ? (
+        <DashboardSkeleton />
+      ) : !current ? (
+        <div className="flex flex-col items-center justify-center p-10 rounded-3xl bg-surface border border-edge/30 neu">
+          <strong className="flex items-center gap-2 text-lg text-ink">
+            <TriangleAlert size={20} className="text-amber-500" aria-hidden="true" /> Could not load weather
+          </strong>
+          <span className="mt-1 text-sm text-muted">{error}</span>
+          <button
+            type="button"
+            onClick={() => fetchWeatherData(inputCity.trim() || DEFAULT_CITY)}
+            className="mt-5 bg-hero-grad text-white px-6 py-2.5 rounded-full text-sm font-semibold cursor-pointer neu-sm hover:opacity-90 transition-opacity duration-150"
+          >
+            Try again
+          </button>
+        </div>
+      ) : (
+        <>
+          {staleLabel && (
+            <div
+              role="status"
+              className="flex items-center gap-2.5 mb-6 px-5 py-3 rounded-2xl border border-edge neu-sm text-sm font-medium text-muted"
+            >
+              <WifiOff size={16} aria-hidden="true" />
+              Offline — showing weather saved {staleLabel}. It will refresh automatically when you are back online.
+            </div>
+          )}
+          {askGeo && (
+            <div className="flex flex-wrap items-center gap-3 mb-6 px-5 py-3 rounded-2xl border border-edge neu-sm text-sm text-ink">
+              <MapPin size={16} className="text-accent" aria-hidden="true" />
+              Show weather for your current location instead?
+              <div className="flex gap-2 ml-auto">
+                <button
+                  type="button"
+                  onClick={() => {
+                    dismissGeo();
+                    handleLocate();
+                  }}
+                  className="bg-hero-grad text-white rounded-full px-4 py-1.5 text-xs font-semibold cursor-pointer neu-sm hover:opacity-90 transition-opacity duration-150"
+                >
+                  Use my location
+                </button>
+                <button
+                  type="button"
+                  onClick={dismissGeo}
+                  className="rounded-full px-4 py-1.5 text-xs font-medium text-muted border border-edge neu-sm active:neu-inset-sm cursor-pointer transition-shadow duration-150"
+                >
+                  Not now
+                </button>
+              </div>
+            </div>
+          )}
+          {severe && (
+            <div
+              role="status"
+              className="flex items-center gap-2.5 mb-6 px-5 py-3 rounded-2xl border border-edge neu-sm text-sm font-medium text-amber-600 dark:text-amber-400"
+            >
+              <TriangleAlert size={16} aria-hidden="true" />
+              {severeLabel}
+            </div>
+          )}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 xl:gap-6">
+            <div className="lg:col-span-4 xl:col-span-3">
+              <TodayCard
+                location={city}
+                locationDetail={cityDetail ?? undefined}
+                day={fmtDayAndDate(current.dt, tz)}
+                time={fmtTime(current.dt, tz)}
+                code={current.weather[0].id}
+                condition={current.weather[0].description}
+                temp={Math.round(current.main.temp)}
+                realFeel={Math.round(current.main.feels_like)}
+                windKmh={msToKmh(current.wind.speed)}
+                pressure={current.main.pressure}
+                humidity={current.main.humidity}
+                uv={currentUv}
+                asOf={observedAt ? fmtTime(observedAt, tz) : undefined}
+              />
+            </div>
+
+            {/* The view toggle sits directly on the strip it controls. */}
+            <div className="lg:col-span-8 xl:col-span-9 flex flex-col">
+              <div
+                className="self-start flex gap-1 p-1.5 rounded-full neu-inset-sm mb-3"
+                role="group"
+                aria-label="Forecast view"
+              >
+                <button
+                  type="button"
+                  className={dayTabClass(view === "today")}
+                  onClick={() => {
+                    setView("today");
+                    setSelectedDay(0);
+                  }}
+                >
+                  Today
+                </button>
+                <button
+                  type="button"
+                  className={dayTabClass(view === "week")}
+                  onClick={() => setView("week")}
+                  disabled={days.length < 2}
+                >
+                  {weekDays.length}-day forecast
+                </button>
+              </div>
+              <div className="flex-1 min-h-0">
+                {view === "today" ? (
+                  <HourlyStrip hours={todayHours} nowDt={current.dt + tz} />
+                ) : (
+                  <WeekList days={weekDays} popByDay={popByDay} selectedDay={selectedDay} onSelect={setSelectedDay} />
+                )}
+              </div>
+            </div>
+
+            <div className="lg:col-span-4 xl:col-span-4">
+              <ChartPanel
+                panel={panel}
+                onPanelChange={setPanel}
+                dayName={selectedDayName}
+                data={rainData}
+                temps={chartTemps}
+                air={air}
+              />
+            </div>
+
+            <div className="lg:col-span-8 xl:col-span-5">
+              <MapSection city={city} lat={current.coord.lat} lon={current.coord.lon} />
+            </div>
+            <div className="lg:col-span-12 xl:col-span-3">
+              <CitiesList cities={otherCities} onSelect={handleSearch} />
+            </div>
+          </div>
+        </>
+      )}
+    </main>
+  );
+}
+
+function DashboardSkeleton() {
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 xl:gap-6" aria-hidden="true">
+      <div className="lg:col-span-4 xl:col-span-3 h-[360px] rounded-3xl bg-well neu-inset-sm animate-pulse" />
+      <div className="lg:col-span-8 xl:col-span-9 grid grid-cols-[repeat(auto-fit,minmax(88px,1fr))] gap-4">
+        {Array.from({ length: 8 }, (_, i) => (
+          <div key={i} className="h-[360px] lg:h-full rounded-3xl bg-well neu-inset-sm animate-pulse" />
+        ))}
+      </div>
+      <div className="lg:col-span-4 xl:col-span-4 h-[320px] rounded-3xl bg-well neu-inset-sm animate-pulse" />
+      <div className="lg:col-span-8 xl:col-span-5 h-[320px] rounded-3xl bg-well neu-inset-sm animate-pulse" />
+      <div className="lg:col-span-12 xl:col-span-3 h-[320px] rounded-3xl bg-well neu-inset-sm animate-pulse" />
+    </div>
+  );
+}
+
+function MissingKeyNotice() {
+  return (
+    <main className="max-w-xl mx-auto p-8 min-h-screen flex items-center">
+      <div className="rounded-3xl bg-surface border border-edge/30 neu p-8 w-full">
+        <h1 className="flex items-center gap-2 text-2xl font-bold mb-2">
+          <Cloud size={28} className="text-accent" fill="currentColor" strokeWidth={0} aria-hidden="true" />
+          <span className="text-gradient">ulap</span>
+        </h1>
+        <p className="text-sm text-muted mb-4">
+          Almost there — the app needs an OpenWeatherMap API key to fetch live weather.
+        </p>
+        <ol className="list-decimal list-inside text-sm text-ink space-y-2">
+          <li>
+            Get a free key at{" "}
+            <a
+              className="text-accent underline"
+              href="https://openweathermap.org/api"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              openweathermap.org/api
+            </a>
+          </li>
+          <li>
+            Create <code className="rounded-md neu-inset-sm px-1.5 py-0.5 text-xs">.env.local</code> in the project root:
+            <pre className="rounded-xl neu-inset-sm p-3 mt-2 text-xs overflow-x-auto">
+              OPENWEATHER_API_KEY=your_key_here
+            </pre>
+          </li>
+          <li>Restart the dev server.</li>
+        </ol>
+      </div>
     </main>
   );
 }
