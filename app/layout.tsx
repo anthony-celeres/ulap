@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "ulap — weather dashboard",
+  title: "ulap",
   description:
     "An open-source weather dashboard for the Philippines — live conditions, multi-day forecast, rain probability, and air quality, integrating Open-Meteo and OpenWeatherMap behind a neumorphic UI.",
   icons: {
